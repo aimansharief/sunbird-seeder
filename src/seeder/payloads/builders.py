@@ -23,18 +23,16 @@ def user_search_by_username(username: str) -> dict:
     return {"request": {"filters": {"userName": username}, "fields": ["id", "userName"]}}
 
 
-def content_create(key: str, env: dict, created_by: str) -> dict:
+def content_create(key: str, env: dict, created_by: str, creator: str, mime_type: str) -> dict:
     return {"request": {"content": {
         "name": key,
         "code": key,
-        "mimeType": "application/pdf",
+        "mimeType": mime_type,
         "primaryCategory": "Learning Resource",
-        "contentType": "Resource",
-        "framework": env["framework"],
         "channel": env["channel"],
         "createdBy": created_by,
-        "createdFor": [env["root_org_id"]],
-        "description": "Benchmark seed content",
+        "creator": creator,
+        "framework": env["framework"],
     }}}
 
 

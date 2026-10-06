@@ -29,3 +29,10 @@ def test_worker_split_has_no_overlap():
 def test_user_key_is_readable_and_run_scoped():
     assert plan.user_key("bench01", 1) == "user1_bench01"
     assert plan.user_key("bench01", 10000) == "user10000_bench01"
+
+
+def test_content_mime_is_deterministic_and_mixed():
+    picks = [plan.content_mime("r1", i, 0.3) for i in range(1, 201)]
+    assert picks == [plan.content_mime("r1", i, 0.3) for i in range(1, 201)]
+    assert 0 < picks.count("video/mp4") < 200 and "application/pdf" in picks
+    assert {plan.content_mime("r1", i, 0) for i in range(1, 50)} == {"application/pdf"}

@@ -65,6 +65,12 @@ class Settings:
         return self.role_user_id("creator")
 
     @property
+    def creator_name(self) -> str:
+        """creator on content: CONTENT_CREATOR_USERNAME, else the admin's username."""
+        prefix = self._role_prefix("creator")
+        return self.secrets[f"{prefix}_USERNAME" if prefix else "ADMIN_USERNAME"]
+
+    @property
     def reviewer_id(self) -> str:
         """lastPublishedBy on content and course publish."""
         return self.role_user_id("reviewer")
