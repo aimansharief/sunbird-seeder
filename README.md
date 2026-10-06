@@ -28,7 +28,7 @@ pytest                      # runs against a fake Sunbird, no network
 | `SUNBIRD_API_KEY` | Kong API key, sent as `Authorization: Bearer` |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Keycloak login for the seeding admin |
 | `ADMIN_USER_ID` | Sunbird user ID of that admin, used as `createdBy` |
-| `KEYCLOAK_CLIENT_SECRET` | Only if the Keycloak client is confidential |
+| `KEYCLOAK_CLIENT_SECRET` | Secret of the admin Keycloak client (`admin_client_id`) |
 | `TEST_USER_PASSWORD` | Password set on every seeded user |
 
 The admin account needs roles to create users, create and review content, publish, and create batches.

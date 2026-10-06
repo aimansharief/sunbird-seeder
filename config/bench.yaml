@@ -4,13 +4,16 @@ output_root: output
 
 channel: your-channel-id
 root_org_id: your-root-org-id
+custodian_channel: your-custodian-channel  # channel *name* sent on user create
 framework: your-framework-id
 email_domain: bench.example.com
 
+# Login = Keycloak grant -> refresh_token -> endpoints.refresh_token -> access token.
 keycloak:
   url: https://your-spark-host/auth
   realm: sunbird
-  admin_client_id: lms        # VERIFY: client used for the admin password grant
+  admin_client_id: lms        # VERIFY: client used for the admin grant
+  admin_grant_type: password
   user_client_id: android     # VERIFY: client used for learner password grants
 
 # Headers sent on every request.
@@ -31,6 +34,7 @@ enrol_as: user                # user = learner's own token; admin = admin token
 # "METHOD /path". {id} is replaced at call time.
 # VERIFY every entry against your Spark deployment before the first run.
 endpoints:
+  refresh_token:      POST /auth/v1/refresh/token
   user_create:        POST /api/user/v1/create
   user_search:        POST /api/user/v1/search
   content_create:     POST /api/content/v1/create

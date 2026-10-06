@@ -13,7 +13,9 @@ def user_create(key: str, env: dict, password: str) -> dict:
         "email": f"{key}@{env['email_domain']}",
         "emailVerified": True,
         "password": password,
-        "channel": env["channel"],
+        "dob": "2001",
+        "channel": env["custodian_channel"],
+        "roles": ["PUBLIC"],
     }}
 
 
