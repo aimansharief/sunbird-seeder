@@ -14,7 +14,7 @@ def user_create(key: str, index: int, env: dict, password: str) -> dict:
         "emailVerified": True,
         "password": password,
         "dob": "2001",
-        "channel": env["custodian_channel"],
+        "channel": env["channel"],
         "roles": ["PUBLIC"],
     }}
 

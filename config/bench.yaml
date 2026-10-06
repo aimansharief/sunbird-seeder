@@ -5,7 +5,6 @@ output_root: output
 
 channel: your-channel-id
 root_org_id: your-root-org-id
-custodian_channel: your-custodian-channel  # channel *name* sent on user create
 framework: your-framework-id
 email_domain: bench.example.com
 

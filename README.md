@@ -25,8 +25,9 @@ The admin needs the role to create users. The creator and reviewer need roles to
 | `mode` | `public` = through Kong, `local` = direct to services | `public` |
 | `base_url` | Sunbird host | `https://your-spark-host` |
 | `keycloak` | Keycloak URL, realm and `client_id` used for every login | `https://your-spark-host/auth` |
-| `custodian_channel` | Channel name for new users | `sunbird` |
-| `channel`, `root_org_id`, `framework` | Used for content and courses | - |
+| `channel` | Channel for users, content and courses | `sunbird` |
+| `framework` | Framework for content and courses | `NCF` |
+| `root_org_id` | `createdFor` on courses and batches | - |
 | `local.hosts` | Service URLs, `local` mode only | `http://localhost:9000` |
 
 **Volumes** go in `config/volumes.yaml`: `run_id` and how many users, contents and courses to create. Start small, e.g. `run_id: smoke01` and `users: 2`.
