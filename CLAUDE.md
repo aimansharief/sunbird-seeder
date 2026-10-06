@@ -40,7 +40,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `src/seeder/stages/runner.py` | `run_all` (bounded concurrency, records errors) and `poll_until` (async publish) |
 | `src/seeder/state/store.py` | SQLite `entities` table keyed by `(kind, key)` |
 | `src/seeder/plan.py` | Pure functions: names, content→course and user→batch assignment, worker split |
-| `src/seeder/export/` | CSV export and Zipf-like hot/long-tail weighting |
+| `src/seeder/export/` | CSV export: every Live ID and enrolment once; JMeter decides how to pick rows |
 
 Dependency order: users and content are independent; content (Live) → course (Live) → batch → enrolment.
 

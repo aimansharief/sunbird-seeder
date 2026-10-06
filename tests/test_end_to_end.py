@@ -107,8 +107,7 @@ async def test_full_pipeline(tmp_path, monkeypatch):
                custodian_channel="custodian", mode="public")
     env["publish_poll"] = {"interval_s": 0, "timeout_s": 5}
     vol = {"run_id": "t1", "users": 20, "contents": 12, "courses": 3,
-           "contents_per_course": 4, "units_per_course": 2, "users_per_batch": 8,
-           "export": {"read_rows": 50, "skew": 1.0, "seed": 1}}
+           "contents_per_course": 4, "units_per_course": 2, "users_per_batch": 8}
     secrets = {"SUNBIRD_API_KEY": "k", "ADMIN_USERNAME": "a", "ADMIN_PASSWORD": "p",
                "ADMIN_USER_ID": "admin", "CONTENT_CREATOR_ID": "creator",
                "CONTENT_REVIEWER_ID": "reviewer",
@@ -133,7 +132,7 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     assert next(fake.ids) == before + 1
 
     assert report(store, vol)
-    csv_dir = export_all(store, vol, settings.output_dir, workers=2, password="pw")
+    csv_dir = export_all(store, settings.output_dir, workers=2, password="pw")
     rows = list(csv.DictReader(open(csv_dir / "enrolments_worker1.csv"))) + \
            list(csv.DictReader(open(csv_dir / "enrolments_worker2.csv")))
     assert len(rows) == 24 and "accessToken" not in rows[0]
@@ -144,5 +143,8 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     w1 = {r["userId"] for r in csv.DictReader(open(csv_dir / "users_worker1.csv"))}
     w2 = {r["userId"] for r in csv.DictReader(open(csv_dir / "users_worker2.csv"))}
     assert w1 and w2 and not (w1 & w2)
-    assert len(list(csv.DictReader(open(csv_dir / "content.csv")))) == 50
+    content_ids = [r["contentId"] for r in csv.DictReader(open(csv_dir / "content.csv"))]
+    course_ids = [r["courseId"] for r in csv.DictReader(open(csv_dir / "courses.csv"))]
+    assert len(content_ids) == len(set(content_ids)) == 12   # each Live ID once
+    assert len(course_ids) == len(set(course_ids)) == 3
     await client.close()

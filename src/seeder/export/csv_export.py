@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 
 from seeder import plan
-from seeder.export.distribution import weighted_rows
 from seeder.state.store import Store
 
 log = logging.getLogger(__name__)
@@ -20,21 +19,19 @@ def _write(path: Path, header: list[str], rows: list[list]) -> None:
     log.info("wrote %s (%d rows)", path, len(rows))
 
 
-def export_all(store: Store, volumes: dict, out_dir: Path, workers: int,
+def export_all(store: Store, out_dir: Path, workers: int,
                password: str = "") -> Path:
     """userName and password let JMeter log each user in at test time."""
     csv_dir = out_dir / "csv"
     csv_dir.mkdir(parents=True, exist_ok=True)
-    cfg = volumes.get("export", {})
-    rows, skew, seed = cfg.get("read_rows", 20000), cfg.get("skew", 1.0), cfg.get("seed", 42)
 
     content_ids = [r["remote_id"] for r in store.list("content", "live")]
     _write(csv_dir / "content.csv", ["contentId"],
-           [[i] for i in weighted_rows(content_ids, rows, skew, seed)])
+           [[i] for i in content_ids])
 
     courses = store.list("course", "live")
     _write(csv_dir / "courses.csv", ["courseId"],
-           [[i] for i in weighted_rows([c["remote_id"] for c in courses], rows, skew, seed + 1)])
+           [[c["remote_id"]] for c in courses])
     course_contents = {c["remote_id"]: c["data"].get("content_ids", []) for c in courses}
 
     users = store.list("user", "created")

@@ -85,7 +85,7 @@ def export(workers: int = typer.Option(1, help="Number of JMeter workers to spli
     """Write JMeter CSVs to output/<run_id>/csv."""
     from seeder.export.csv_export import export_all
     settings, store = _setup()
-    path = export_all(store, settings.volumes, settings.output_dir, workers,
+    path = export_all(store, settings.output_dir, workers,
                       settings.secrets["TEST_USER_PASSWORD"])
     store.close()
     typer.echo(f"CSVs written to {path}")
