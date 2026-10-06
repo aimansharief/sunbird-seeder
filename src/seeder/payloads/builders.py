@@ -80,14 +80,18 @@ def publish(published_by: str) -> dict:
     return {"request": {"content": {"lastPublishedBy": published_by}}}
 
 
-def batch_create(key: str, course_id: str, created_by: str) -> dict:
+def batch_create(key: str, course_id: str, env: dict, created_by: str) -> dict:
     return {"request": {
         "courseId": course_id,
         "name": key,
         "description": "Benchmark seed batch",
         "enrollmentType": "open",
         "startDate": date.today().isoformat(),
+        "endDate": None,
         "createdBy": created_by,
+        "createdFor": [env["root_org_id"]],
+        "mentors": [],
+        "tandc": True,
     }}
 
 

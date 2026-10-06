@@ -12,9 +12,11 @@ Creates test data in Sunbird Spark (users, Live content, Live courses, batches, 
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Admin login that creates the data |
 | `KEYCLOAK_CLIENT_SECRET` | Secret of the admin Keycloak client |
 | `ADMIN_USER_ID` | Admin's Sunbird user ID (not needed for users) |
+| `CONTENT_CREATOR_USERNAME`, `_PASSWORD`, `_ID` | Creator account: creates content, courses and batches. Empty = admin |
+| `CONTENT_REVIEWER_USERNAME`, `_PASSWORD`, `_ID` | Reviewer account: publishes content and courses. Empty = admin |
 | `TEST_USER_PASSWORD` | Password given to every seeded user |
 
-The admin needs roles to create users, create, review and publish content, and create batches.
+The admin needs the role to create users. The creator and reviewer need roles to create and to publish content; without them, the admin needs those roles too.
 
 **Environment** goes in `config/bench.yaml`:
 
