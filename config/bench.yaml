@@ -1,0 +1,49 @@
+# Environment settings. Secrets come from .env, not this file.
+base_url: https://your-spark-host
+output_root: output
+
+channel: your-channel-id
+root_org_id: your-root-org-id
+framework: your-framework-id
+email_domain: bench.example.com
+
+keycloak:
+  url: https://your-spark-host/auth
+  realm: sunbird
+  admin_client_id: lms        # VERIFY: client used for the admin password grant
+  user_client_id: android     # VERIFY: client used for learner password grants
+
+# Headers sent on every request.
+extra_headers:
+  X-Channel-Id: your-channel-id
+
+concurrency: 10               # parallel requests while seeding
+token_concurrency: 20
+request_timeout_s: 30
+retries: 4
+
+publish_poll:
+  interval_s: 10
+  timeout_s: 1800
+
+enrol_as: user                # user = learner's own token; admin = admin token
+
+# "METHOD /path". {id} is replaced at call time.
+# VERIFY every entry against your Spark deployment before the first run.
+endpoints:
+  user_create:        POST /api/user/v1/create
+  user_search:        POST /api/user/v1/search
+  content_create:     POST /api/content/v1/create
+  content_upload:     POST /api/content/v1/upload/{id}
+  content_review:     POST /api/content/v1/review/{id}
+  content_publish:    POST /api/content/v1/publish/{id}
+  content_read:       GET  /api/content/v1/read/{id}
+  content_retire:     DELETE /api/content/v1/retire/{id}
+  course_create:      POST /api/collection/v1/create
+  course_hierarchy:   PATCH /api/collection/v1/hierarchy/update
+  course_review:      POST /api/collection/v1/review/{id}
+  course_publish:     POST /api/collection/v1/publish/{id}
+  course_read:        GET  /api/collection/v1/read/{id}
+  course_retire:      DELETE /api/collection/v1/retire/{id}
+  batch_create:       POST /api/course/v1/batch/create
+  enrol:              POST /api/course/v1/enrol

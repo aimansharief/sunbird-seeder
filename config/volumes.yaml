@@ -1,0 +1,14 @@
+# Change run_id for every fresh seed; all names and the output folder use it.
+run_id: bench01
+
+users: 10000
+contents: 1000
+courses: 105
+contents_per_course: 10
+units_per_course: 2
+users_per_batch: 500        # one batch per course -> 105 x 500 = 52,500 enrolments
+
+export:
+  read_rows: 20000          # rows in content.csv / courses.csv
+  skew: 1.0                 # 0 = uniform, ~1 = Zipf-like (few hot, long tail)
+  seed: 42                  # keeps exports reproducible

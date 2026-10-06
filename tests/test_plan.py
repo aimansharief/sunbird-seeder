@@ -1,0 +1,26 @@
+from collections import Counter
+
+from seeder import plan
+
+
+def test_enrolment_volume_matches_sheet():
+    pairs = {(c, u) for c in range(1, 106)
+             for u in plan.batch_user_indices(c, 500, 10000)}
+    assert len(pairs) == 52500
+    per_user = Counter(u for _, u in pairs)
+    assert set(per_user.values()) <= {5, 6}
+
+
+def test_course_contents_are_valid_and_distinct():
+    for c in range(1, 106):
+        idx = plan.course_content_indices(c, 10, 1000)
+        assert len(set(idx)) == 10 and all(1 <= i <= 1000 for i in idx)
+
+
+def test_split_units_even():
+    assert [len(u) for u in plan.split_units(list(range(10)), 3)] == [4, 3, 3]
+
+
+def test_worker_split_has_no_overlap():
+    owners = {u: plan.worker_for_user(u, 4) for u in range(1, 10001)}
+    assert Counter(owners.values()) == {1: 2500, 2: 2500, 3: 2500, 4: 2500}
