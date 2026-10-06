@@ -97,8 +97,8 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path.parent)  # assets path is relative to repo root
     import os, shutil
     os.makedirs("assets", exist_ok=True)
-    repo_asset = os.path.join(os.path.dirname(__file__), "..", "assets", "sample_content.pdf")
-    shutil.copy(repo_asset, "assets/sample_content.pdf")
+    repo_asset = os.path.join(os.path.dirname(__file__), "..", "assets", "test.pdf")
+    shutil.copy(repo_asset, "assets/test.pdf")
 
     with open(os.path.join(os.path.dirname(__file__), "..", "config", "bench.yaml")) as f:
         env = yaml.safe_load(f)

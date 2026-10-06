@@ -3,7 +3,7 @@ from pathlib import Path
 from seeder.client.http import SunbirdClient
 from seeder.payloads import builders as b
 
-ASSET = Path("assets/sample_content.pdf")
+ASSET = Path("assets/test.pdf")
 
 
 async def create(c: SunbirdClient, key: str) -> str:
