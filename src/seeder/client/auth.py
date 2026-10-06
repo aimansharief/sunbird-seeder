@@ -53,6 +53,9 @@ class Auth:
         return body["access_token"], int(body.get("expires_in", fallback_ttl))
 
     async def login(self, form: dict) -> tuple[str, int]:
+        secret = self.s.secrets.get("KEYCLOAK_CLIENT_SECRET")
+        if secret:
+            form["client_secret"] = secret
         grant = await self.keycloak_grant(form)
         return await self.refresh(grant["refresh_token"], int(grant.get("expires_in", 300)))
 
@@ -65,9 +68,6 @@ class Auth:
                     "grant_type": kc.get("admin_grant_type", "password"),
                     "username": self.s.secrets["ADMIN_USERNAME"],
                     "password": self.s.secrets["ADMIN_PASSWORD"]}
-            secret = self.s.secrets.get("KEYCLOAK_CLIENT_SECRET")
-            if secret:
-                form["client_secret"] = secret
             token, ttl = await self.login(form)
             self._admin_token, self._admin_expiry = token, time.time() + ttl
             return token
