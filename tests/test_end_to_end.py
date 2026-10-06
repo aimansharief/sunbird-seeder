@@ -72,7 +72,9 @@ class FakeSunbird:
         if "/read/" in p:
             return ok({"content": {"status": self.status[p.rsplit("/", 1)[1]]}})
         if p == "/api/collection/v1/hierarchy/update":
-            return ok({})
+            nodes = json.loads(req.content)["request"]["data"]["nodesModified"]
+            return ok({"identifiers": {k: f"do_unit{next(self.ids)}"
+                                       for k, v in nodes.items() if v["isNew"]}})
         if p == "/api/course/v1/batch/create":
             r = json.loads(req.content)["request"]
             assert r["createdBy"] == "creator" and r["createdFor"] == [self.root_org]
@@ -145,7 +147,11 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     w2 = {r["userId"] for r in csv.DictReader(open(csv_dir / "users_worker2.csv"))}
     assert w1 and w2 and not (w1 & w2)
     content_ids = [r["contentId"] for r in csv.DictReader(open(csv_dir / "content.csv"))]
-    course_ids = [r["courseId"] for r in csv.DictReader(open(csv_dir / "courses.csv"))]
+    course_rows = list(csv.DictReader(open(csv_dir / "courses.csv")))
+    course_ids = [r["courseId"] for r in course_rows]
     assert len(content_ids) == len(set(content_ids)) == 12   # each Live ID once
     assert len(course_ids) == len(set(course_ids)) == 3
+    assert all(len(r["contentIds"].split(",")) == 4 for r in course_rows)
+    assert {r["courseId"]: r["contentIds"] for r in course_rows} == \
+        {c["remote_id"]: ",".join(c["data"]["content_ids"]) for c in store.list("course", "live")}
     await client.close()

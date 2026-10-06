@@ -30,9 +30,9 @@ def export_all(store: Store, out_dir: Path, workers: int,
            [[i] for i in content_ids])
 
     courses = store.list("course", "live")
-    _write(csv_dir / "courses.csv", ["courseId"],
-           [[c["remote_id"]] for c in courses])
     course_contents = {c["remote_id"]: c["data"].get("content_ids", []) for c in courses}
+    _write(csv_dir / "courses.csv", ["courseId", "contentIds"],
+           [[c["remote_id"], ",".join(course_contents[c["remote_id"]])] for c in courses])
 
     users = store.list("user", "created")
     users_by_worker: dict[int, list[list]] = {w: [] for w in range(1, workers + 1)}
@@ -50,7 +50,7 @@ def export_all(store: Store, out_dir: Path, workers: int,
             continue
         enrol_by_worker[w].append([
             d["user_id"], d["course_id"], d["batch_id"],
-            "|".join(course_contents.get(d["course_id"], [])), d["user_key"], password])
+            ",".join(course_contents.get(d["course_id"], [])), d["user_key"], password])
 
     for w in range(1, workers + 1):
         _write(csv_dir / f"users_worker{w}.csv",

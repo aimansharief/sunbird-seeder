@@ -36,38 +36,48 @@ def content_create(key: str, env: dict, created_by: str, creator: str, mime_type
     }}}
 
 
-def course_create(key: str, env: dict, created_by: str) -> dict:
+def course_create(key: str, env: dict, created_by: str, creator: str) -> dict:
     return {"request": {"content": {
         "name": key,
         "code": key,
         "mimeType": "application/vnd.ekstep.content-collection",
         "primaryCategory": "Course",
-        "contentType": "Course",
-        "framework": env["framework"],
         "channel": env["channel"],
         "createdBy": created_by,
-        "createdFor": [env["root_org_id"]],
-        "description": "Benchmark seed course",
+        "creator": creator,
+        "framework": env["framework"],
     }}}
 
 
-def course_hierarchy(course_id: str, units: list[list[str]]) -> dict:
-    """One course with N units; each unit holds Live content IDs."""
-    nodes = {course_id: {"root": True, "isNew": False, "metadata": {}}}
-    hierarchy = {course_id: {"root": True, "children": []}}
-    for n, children in enumerate(units, start=1):
-        unit_id = str(uuid.uuid4())
-        nodes[unit_id] = {"root": False, "isNew": True, "objectType": "Collection",
-                          "metadata": {
-                              "name": f"Unit {n}",
-                              "mimeType": "application/vnd.ekstep.content-collection",
-                              "primaryCategory": "Course Unit",
-                              "contentType": "CourseUnit",
-                              "visibility": "Parent",
-                          }}
-        hierarchy[course_id]["children"].append(unit_id)
-        hierarchy[unit_id] = {"root": False, "children": list(children)}
-    return {"request": {"data": {"nodesModified": nodes, "hierarchy": hierarchy}}}
+def course_hierarchy(course_id: str, course_name: str, units: list[list[str]],
+                     updated_by: str, unit_ids: list[str], new: bool) -> dict:
+    """One course, N units, each holding Live content IDs.
+
+    new=True creates the units (unit_ids are temporary). new=False re-sends the tree keyed by
+    the real unit IDs, so the server's relational_metadata is keyed by the IDs publish reads.
+    """
+    nodes = {course_id: {"root": True, "isNew": False, "objectType": "Content",
+                         "metadata": {"name": course_name}}}
+    hierarchy = {course_id: {"name": course_name, "contentType": "Course",
+                             "root": True, "children": list(unit_ids)}}
+    for n, (unit_id, children) in enumerate(zip(unit_ids, units), start=1):
+        unit_name = f"{course_name} Unit {n}"
+        if new:
+            nodes[unit_id] = {"root": False, "isNew": True, "objectType": "Collection",
+                              "metadata": {
+                                  "code": unit_id,
+                                  "name": unit_name,
+                                  "mimeType": "application/vnd.ekstep.content-collection",
+                                  "primaryCategory": "Course Unit",
+                                  "contentType": "CourseUnit",
+                                  "visibility": "Parent",
+                                  "dialcodeRequired": "No",
+                                  "attributions": [],
+                              }}
+        hierarchy[unit_id] = {"name": unit_name, "contentType": "CourseUnit",
+                              "root": False, "children": list(children)}
+    return {"request": {"data": {"nodesModified": nodes, "hierarchy": hierarchy,
+                                 "lastUpdatedBy": updated_by}}}
 
 
 def review() -> dict:

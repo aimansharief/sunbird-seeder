@@ -60,13 +60,13 @@ Dependency order: users and content are independent; content (Live) → course (
 |---|---|
 | user | `created` |
 | content | `created` → `uploaded` → `publish_requested` → `live` (no review step) |
-| course | `created` → `hierarchy_updated` → `in_review` → `publish_requested` → `live` |
+| course | `created` → `hierarchy_updated` → `publish_requested` → `live` (no review step) |
 | batch | `created` |
 | enrolment | `enrolled` |
 
 ## Default volumes
 
-10,000 users; 1,000 contents; 105 courses with 10 contents in 2 units; one batch per course; 500 users per batch = 52,500 enrolments (each user in 5–6 courses).
+10,000 users; 1,000 contents; 105 courses with 10 randomly picked contents in 2 units; one batch per course; 500 users per batch = 52,500 enrolments (each user in 5–6 courses).
 
 ## Not yet verified against a real Spark deployment
 
