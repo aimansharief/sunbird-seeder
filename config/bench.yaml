@@ -59,23 +59,22 @@ endpoints:
 # VERIFY hosts and paths against your Spark deployment.
 local:
   hosts:
-    userorg: http://userorg-service:9000
-    content: http://content-service:9000
-    lms: http://lms-service:9000
+    lern: http://lern-service:9000          # users, batches, enrolments (userorg + lms)
+    knowlg: http://knowlg-service:9000      # content and courses
   endpoints:
-    user_create:      {route: "POST {userorg}/v1/user/create", user_token: true}
-    user_search:      {route: "POST {userorg}/v1/user/search", user_token: true}
-    content_create:   {route: "POST {content}/content/v3/create"}
-    content_upload:   {route: "POST {content}/content/v3/upload/{id}"}
-    content_review:   {route: "POST {content}/content/v3/review/{id}"}
-    content_publish:  {route: "POST {content}/content/v3/publish/{id}"}
-    content_read:     {route: "GET {content}/content/v3/read/{id}"}
-    content_retire:   {route: "DELETE {content}/content/v3/retire/{id}"}
-    course_create:    {route: "POST {content}/collection/v4/create"}
-    course_hierarchy: {route: "PATCH {content}/collection/v4/hierarchy/update"}
-    course_review:    {route: "POST {content}/collection/v4/review/{id}"}
-    course_publish:   {route: "POST {content}/collection/v4/publish/{id}"}
-    course_read:      {route: "GET {content}/collection/v4/read/{id}"}
-    course_retire:    {route: "DELETE {content}/collection/v4/retire/{id}"}
-    batch_create:     {route: "POST {lms}/v1/course/batch/create", user_token: true}
-    enrol:            {route: "POST {lms}/v1/course/enroll", user_token: true}
+    user_create:      {route: "POST {lern}/v1/user/create", user_token: true}
+    user_search:      {route: "POST {lern}/v1/user/search", user_token: true}
+    content_create:   {route: "POST {knowlg}/content/v3/create"}
+    content_upload:   {route: "POST {knowlg}/content/v3/upload/{id}"}
+    content_review:   {route: "POST {knowlg}/content/v3/review/{id}"}
+    content_publish:  {route: "POST {knowlg}/content/v3/publish/{id}"}
+    content_read:     {route: "GET {knowlg}/content/v3/read/{id}"}
+    content_retire:   {route: "DELETE {knowlg}/content/v3/retire/{id}"}
+    course_create:    {route: "POST {knowlg}/collection/v4/create"}
+    course_hierarchy: {route: "PATCH {knowlg}/collection/v4/hierarchy/update"}
+    course_review:    {route: "POST {knowlg}/collection/v4/review/{id}"}
+    course_publish:   {route: "POST {knowlg}/collection/v4/publish/{id}"}
+    course_read:      {route: "GET {knowlg}/collection/v4/read/{id}"}
+    course_retire:    {route: "DELETE {knowlg}/collection/v4/retire/{id}"}
+    batch_create:     {route: "POST {lern}/v1/course/batch/create", user_token: true}
+    enrol:            {route: "POST {lern}/v1/course/enroll", user_token: true}
