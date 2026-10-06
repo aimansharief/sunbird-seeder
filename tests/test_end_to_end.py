@@ -1,4 +1,4 @@
-"""Runs every stage, tokens and export against an in-memory fake Sunbird."""
+"""Runs every stage and export against an in-memory fake Sunbird."""
 import csv
 import itertools
 import json
@@ -10,7 +10,7 @@ import yaml
 from seeder.client.http import SunbirdClient
 from seeder.config import Settings
 from seeder.export.csv_export import export_all
-from seeder.stages import batches, content, courses, enrolments, tokens, users
+from seeder.stages import batches, content, courses, enrolments, users
 from seeder.stages.context import Ctx
 from seeder.state.store import Store
 from seeder.verify import report
@@ -124,7 +124,6 @@ async def test_full_pipeline(tmp_path, monkeypatch):
 
     for stage in (users, content, courses, batches, enrolments):
         assert await stage.seed(ctx) == 0
-    assert await tokens.refresh(ctx) == 0
     assert len(fake.enrolled) == 3 * 8
 
     # Rerun is a no-op: nothing new is created.
@@ -134,10 +133,14 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     assert next(fake.ids) == before + 1
 
     assert report(store, vol)
-    csv_dir = export_all(store, vol, settings.output_dir, workers=2)
+    csv_dir = export_all(store, vol, settings.output_dir, workers=2, password="pw")
     rows = list(csv.DictReader(open(csv_dir / "enrolments_worker1.csv"))) + \
            list(csv.DictReader(open(csv_dir / "enrolments_worker2.csv")))
-    assert len(rows) == 24 and all(r["accessToken"] for r in rows)
+    assert len(rows) == 24 and "accessToken" not in rows[0]
+    assert all(r["userName"].endswith("_t1") and r["password"] == "pw" for r in rows)
+    user_rows = list(csv.DictReader(open(csv_dir / "users_worker1.csv")))
+    assert list(user_rows[0]) == ["userId", "userName", "password"]
+    assert user_rows[0]["password"] == "pw"
     w1 = {r["userId"] for r in csv.DictReader(open(csv_dir / "users_worker1.csv"))}
     w2 = {r["userId"] for r in csv.DictReader(open(csv_dir / "users_worker2.csv"))}
     assert w1 and w2 and not (w1 & w2)

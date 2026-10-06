@@ -23,7 +23,6 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | Seed one stage | `seeder seed users` / `content` / `courses` / `batches` / `enrolments` |
 | Seed everything in order | `seeder seed all` |
 | Check progress and errors | `seeder verify` |
-| Fresh learner tokens | `seeder tokens` (run just before a load test) |
 | Write JMeter CSVs | `seeder export --workers N` |
 | Retire seeded content/courses | `seeder cleanup --yes` |
 
