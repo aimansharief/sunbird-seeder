@@ -3,7 +3,8 @@ from __future__ import annotations
 
 
 def user_key(run_id: str, i: int) -> str:
-    return f"{run_id}_user_{i:05d}"
+    """Also the Sunbird userName, e.g. user1_bench01."""
+    return f"user{i}_{run_id}"
 
 
 def content_key(run_id: str, i: int) -> str:

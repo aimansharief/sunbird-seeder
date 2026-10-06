@@ -5,10 +5,10 @@ import uuid
 from datetime import date
 
 
-def user_create(key: str, env: dict, password: str) -> dict:
+def user_create(key: str, index: int, env: dict, password: str) -> dict:
     return {"request": {
-        "firstName": "Bench",
-        "lastName": key,
+        "firstName": "User",
+        "lastName": str(index),
         "userName": key,
         "email": f"{key}@{env['email_domain']}",
         "emailVerified": True,

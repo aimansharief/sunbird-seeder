@@ -37,6 +37,7 @@ class FakeSunbird:
         if p == "/api/user/v1/create":
             r = json.loads(req.content)["request"]
             assert r["channel"] == "custodian" and r["roles"] == ["PUBLIC"]
+            assert r["firstName"] == "User" and r["userName"] == f"user{r['lastName']}_t1"
             if self.flaky_once:          # exercise the retry path once
                 self.flaky_once = False
                 return httpx.Response(503)

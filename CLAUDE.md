@@ -50,7 +50,7 @@ Dependency order: users and content are independent; content (Live) → course (
 - SQLite is the source of truth during seeding; CSVs are generated from it at the end. Do not track state in CSVs.
 - Every stage must be resumable. Skip items already at their final status; resume others from their last status.
 - `store.upsert` records a successful step and clears the error. `store.mark_error` records a failure without changing status.
-- Names are deterministic and prefixed with `run_id` (`bench01_user_00001`). Assignment logic stays in `plan.py` with tests.
+- Names are deterministic and include `run_id` (users: `user1_bench01`, display name "User 1"; others: `bench01_content_00001`). Assignment logic stays in `plan.py` with tests.
 - Endpoints belong in `config/bench.yaml`, never hard-coded. Add each new endpoint to both `endpoints` (public) and `local.endpoints`. Request bodies belong in `payloads/builders.py`.
 - Secrets come from `.env` only. Never commit `.env` or `output/`.
 - New behaviour needs a test. `tests/test_end_to_end.py` uses a fake Sunbird via `httpx.MockTransport`; extend `FakeSunbird` when adding endpoints.
