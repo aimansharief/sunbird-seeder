@@ -115,3 +115,20 @@ async def test_local_mode_routes_to_services_without_api_key():
     assert seen["/content/v3/read/do_1"] == ("http://content:9000/content/v3/read/do_1",
                                              None, None)
     await c.close()
+
+
+async def test_learner_login_sends_client_secret():
+    forms = []
+
+    def handler(req):
+        if req.url.path.endswith("/openid-connect/token"):
+            forms.append(dict(httpx.QueryParams(req.content.decode())))
+        return fake_auth(req) or httpx.Response(404)
+
+    secrets = dict(SECRETS, KEYCLOAK_CLIENT_SECRET="s", TEST_USER_PASSWORD="pw")
+    c = SunbirdClient(Settings(env=ENV, volumes={"run_id": "t"}, secrets=secrets),
+                      transport=httpx.MockTransport(handler))
+    assert (await c.auth.user_token("user1_t"))[0] == "t"
+    assert forms == [{"client_id": "android", "grant_type": "password", "username": "user1_t",
+                      "password": "pw", "client_secret": "s"}]
+    await c.close()
