@@ -11,7 +11,7 @@ ASSETS = {
 
 async def create(c: SunbirdClient, key: str, mime_type: str) -> str:
     res = await c.call("content_create",
-                       json=b.content_create(key, c.s.env, c.s.creator_id, mime_type),
+                       json=b.content_create(key, c.s.env, c.s.creator_id, c.s.creator_name, mime_type),
                        role="creator")
     return res["result"]["identifier"]
 

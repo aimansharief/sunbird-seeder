@@ -23,7 +23,7 @@ def user_search_by_username(username: str) -> dict:
     return {"request": {"filters": {"userName": username}, "fields": ["id", "userName"]}}
 
 
-def content_create(key: str, env: dict, created_by: str, mime_type: str) -> dict:
+def content_create(key: str, env: dict, created_by: str, creator: str, mime_type: str) -> dict:
     return {"request": {"content": {
         "name": key,
         "code": key,
@@ -31,7 +31,7 @@ def content_create(key: str, env: dict, created_by: str, mime_type: str) -> dict
         "primaryCategory": "Learning Resource",
         "channel": env["channel"],
         "createdBy": created_by,
-        "creator": "Content Creator",
+        "creator": creator,
         "framework": env["framework"],
     }}}
 

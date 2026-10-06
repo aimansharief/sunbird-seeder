@@ -28,7 +28,7 @@ class FakeKnowlg:
         if p == "/content/v4/create":
             body = json.loads(req.content)["request"]["content"]
             assert "contentType" not in body and body["primaryCategory"] == "Learning Resource"
-            assert body["creator"] == "Content Creator" and body["framework"] == "fw-1" and body["channel"] == "chan-1"
+            assert body["creator"] == "creator1" and body["createdBy"] == "creator-id" and body["framework"] == "fw-1" and body["channel"] == "chan-1"
             self.n += 1
             ident = f"do_{self.n}"
             self.status[ident], self.mime[ident] = "Draft", body["mimeType"]
@@ -40,7 +40,7 @@ class FakeKnowlg:
             if self.publish_failures:
                 self.publish_failures -= 1
                 return httpx.Response(400, json={"params": {"err": "ERR_CONTENT_PUBLISH"}})
-            assert json.loads(req.content)["request"]["content"]["lastPublishedBy"] == "admin"
+            assert json.loads(req.content)["request"]["content"]["lastPublishedBy"] == "reviewer-id"
             self.status[p.rsplit("/", 1)[1]] = "Live"
             return ok({"publishStatus": "pushed"})
         if p.startswith("/content/v4/read/"):
@@ -61,7 +61,8 @@ async def test_content_local_v4(tmp_path, monkeypatch):
     env["local"]["hosts"]["knowlg"] = "http://knowlg.test"
     env["publish_poll"] = {"interval_s": 0, "timeout_s": 5}
     vol = {"run_id": "t1", "contents": 12, "mp4_ratio": 0.5}
-    settings = Settings(env=env, volumes=vol, secrets={"ADMIN_USER_ID": "admin"})
+    settings = Settings(env=env, volumes=vol, secrets={"CONTENT_CREATOR_USERNAME": "creator1", "CONTENT_CREATOR_ID": "creator-id",
+                     "CONTENT_REVIEWER_USERNAME": "reviewer1", "CONTENT_REVIEWER_ID": "reviewer-id"})
     fake = FakeKnowlg()
     store = Store(settings.output_dir / "state.db")
     client = SunbirdClient(settings, transport=httpx.MockTransport(fake))
