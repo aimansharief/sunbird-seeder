@@ -37,7 +37,6 @@ def content_create(key: str, env: dict, created_by: str, creator: str, mime_type
 
 
 def course_create(key: str, env: dict, created_by: str, creator: str) -> dict:
-    # Same body as create_course.sh (POST /content/v4/create with the collection mimeType).
     return {"request": {"content": {
         "name": key,
         "code": key,
@@ -52,7 +51,7 @@ def course_create(key: str, env: dict, created_by: str, creator: str) -> dict:
 
 def course_hierarchy(course_id: str, course_name: str, units: list[list[str]],
                      updated_by: str, unit_ids: list[str], new: bool) -> dict:
-    """Same shape as create_course.sh: one course, N units, each holding Live content IDs.
+    """One course, N units, each holding Live content IDs.
 
     new=True creates the units (unit_ids are temporary). new=False re-sends the tree keyed by
     the real unit IDs, so the server's relational_metadata is keyed by the IDs publish reads.
