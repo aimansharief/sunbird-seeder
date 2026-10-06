@@ -51,12 +51,9 @@ pytest          # optional: runs against a fake Sunbird, no network
 | Create batches | `seeder seed batches` |
 | Enrol users | `seeder seed enrolments` |
 | Check progress and errors | `seeder verify` |
-| Get learner tokens | `seeder tokens` |
 | Write JMeter CSVs | `seeder export --workers 4` |
 
 Run the seed steps in order, or all at once with `seeder seed all`. If a step reports failures, run it again.
-
-Run `tokens` and `export` just before each load test, since tokens expire.
 
 Users are named `user1_<run_id>`, `user2_<run_id>`, ... with display name `User 1`, `User 2`, ...
 
@@ -72,6 +69,8 @@ Everything is written to `output/<run_id>/`: progress in `state.db`, CSVs in `cs
 | `enrolments_workerN.csv` | Read / Update Content State |
 
 Copy each `_workerN` file to JMeter worker N.
+
+The `_workerN` files carry `userName` and `password` instead of tokens, so JMeter logs each user in at test time. The password is `TEST_USER_PASSWORD`; share these files only with the load-test team.
 
 ## Cleanup
 

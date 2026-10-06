@@ -20,7 +20,9 @@ def _write(path: Path, header: list[str], rows: list[list]) -> None:
     log.info("wrote %s (%d rows)", path, len(rows))
 
 
-def export_all(store: Store, volumes: dict, out_dir: Path, workers: int) -> Path:
+def export_all(store: Store, volumes: dict, out_dir: Path, workers: int,
+               password: str = "") -> Path:
+    """userName and password let JMeter log each user in at test time."""
     csv_dir = out_dir / "csv"
     csv_dir.mkdir(parents=True, exist_ok=True)
     cfg = volumes.get("export", {})
@@ -39,11 +41,10 @@ def export_all(store: Store, volumes: dict, out_dir: Path, workers: int) -> Path
     users_by_worker: dict[int, list[list]] = {w: [] for w in range(1, workers + 1)}
     for n, u in enumerate(users, start=1):
         users_by_worker[plan.worker_for_user(n, workers)].append(
-            [u["remote_id"], u["key"], u["data"].get("token", "")])
+            [u["remote_id"], u["key"], password])
 
     user_worker = {u["key"]: plan.worker_for_user(n, workers)
                    for n, u in enumerate(users, start=1)}
-    tokens = {u["key"]: u["data"].get("token", "") for u in users}
     enrol_by_worker: dict[int, list[list]] = {w: [] for w in range(1, workers + 1)}
     for e in store.list("enrolment", "enrolled"):
         d = e["data"]
@@ -52,15 +53,12 @@ def export_all(store: Store, volumes: dict, out_dir: Path, workers: int) -> Path
             continue
         enrol_by_worker[w].append([
             d["user_id"], d["course_id"], d["batch_id"],
-            "|".join(course_contents.get(d["course_id"], [])), tokens.get(d["user_key"], "")])
+            "|".join(course_contents.get(d["course_id"], [])), d["user_key"], password])
 
     for w in range(1, workers + 1):
         _write(csv_dir / f"users_worker{w}.csv",
-               ["userId", "userName", "accessToken"], users_by_worker[w])
+               ["userId", "userName", "password"], users_by_worker[w])
         _write(csv_dir / f"enrolments_worker{w}.csv",
-               ["userId", "courseId", "batchId", "contentIds", "accessToken"],
+               ["userId", "courseId", "batchId", "contentIds", "userName", "password"],
                enrol_by_worker[w])
-
-    if not any(tokens.values()):
-        log.warning("no user tokens in store; run `seeder tokens` then export again")
     return csv_dir

@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from enum import Enum
-from typing import Optional
 
 import typer
 
@@ -82,19 +81,12 @@ def seed(stage: Stage = typer.Argument(..., help="Stage to run, or 'all' in orde
 
 
 @app.command()
-def tokens(max_age_min: Optional[float] = typer.Option(None, help="Only refresh tokens older than this")):
-    """Fetch fresh learner tokens into the store. Run shortly before a load test."""
-    from seeder.stages import tokens as tk
-    failed = _run(lambda ctx: tk.refresh(ctx, max_age_min * 60 if max_age_min else None))
-    raise typer.Exit(code=1 if failed else 0)
-
-
-@app.command()
 def export(workers: int = typer.Option(1, help="Number of JMeter workers to split per-user files")):
     """Write JMeter CSVs to output/<run_id>/csv."""
     from seeder.export.csv_export import export_all
     settings, store = _setup()
-    path = export_all(store, settings.volumes, settings.output_dir, workers)
+    path = export_all(store, settings.volumes, settings.output_dir, workers,
+                      settings.secrets["TEST_USER_PASSWORD"])
     store.close()
     typer.echo(f"CSVs written to {path}")
 
