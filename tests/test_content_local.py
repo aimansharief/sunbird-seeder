@@ -27,7 +27,7 @@ class FakeKnowlg:
         ok = lambda result: httpx.Response(200, json={"result": result})
         if p == "/content/v4/create":
             body = json.loads(req.content)["request"]["content"]
-            assert "contentType" not in body and body["primaryCategory"] == "Learning Resource"
+            assert "contentType" not in body and body["primaryCategory"] in ("Learning Resource", "Course")
             assert body["creator"] == "creator1" and body["createdBy"] == "creator-id" and body["framework"] == "fw-1" and body["channel"] == "chan-1"
             self.n += 1
             ident = f"do_{self.n}"

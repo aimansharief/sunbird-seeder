@@ -65,7 +65,7 @@ Everything is written to `output/<run_id>/`: progress in `state.db`, CSVs in `cs
 | File | Used by |
 |---|---|
 | `content.csv` | Content Read |
-| `courses.csv` | Course Hierarchy |
+| `courses.csv` | Course Hierarchy (`courseId`, `contentIds` = comma-separated content ids in the course, quoted by the CSV writer) |
 | `users_workerN.csv` | User Profile Read |
 | `enrolments_workerN.csv` | Read / Update Content State |
 

@@ -40,7 +40,6 @@ endpoints:
   content_retire:     DELETE /api/content/v1/retire/{id}
   course_create:      POST /api/collection/v1/create
   course_hierarchy:   PATCH /api/collection/v1/hierarchy/update
-  course_review:      POST /api/collection/v1/review/{id}
   course_publish:     POST /api/collection/v1/publish/{id}
   course_read:        GET  /api/collection/v1/read/{id}
   course_retire:      DELETE /api/collection/v1/retire/{id}
@@ -63,9 +62,8 @@ local:
     content_publish:  {route: "POST {knowlg}/content/v4/publish/{id}"}
     content_read:     {route: "GET {knowlg}/content/v4/read/{id}"}
     content_retire:   {route: "DELETE {knowlg}/content/v4/retire/{id}"}
-    course_create:    {route: "POST {knowlg}/collection/v4/create"}
+    course_create:    {route: "POST {knowlg}/content/v4/create"}
     course_hierarchy: {route: "PATCH {knowlg}/collection/v4/hierarchy/update"}
-    course_review:    {route: "POST {knowlg}/collection/v4/review/{id}"}
     course_publish:   {route: "POST {knowlg}/collection/v4/publish/{id}"}
     course_read:      {route: "GET {knowlg}/collection/v4/read/{id}"}
     course_retire:    {route: "DELETE {knowlg}/collection/v4/retire/{id}"}

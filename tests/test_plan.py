@@ -13,7 +13,7 @@ def test_enrolment_volume_matches_sheet():
 
 def test_course_contents_are_valid_and_distinct():
     for c in range(1, 106):
-        idx = plan.course_content_indices(c, 10, 1000)
+        idx = plan.course_content_indices("r1", c, 10, 1000)
         assert len(set(idx)) == 10 and all(1 <= i <= 1000 for i in idx)
 
 
@@ -36,3 +36,10 @@ def test_content_mime_is_deterministic_and_mixed():
     assert picks == [plan.content_mime("r1", i, 0.3) for i in range(1, 201)]
     assert 0 < picks.count("video/mp4") < 200 and "application/pdf" in picks
     assert {plan.content_mime("r1", i, 0) for i in range(1, 50)} == {"application/pdf"}
+
+
+def test_course_contents_are_seeded_random():
+    a = plan.course_content_indices("r1", 7, 10, 1000)
+    assert a == plan.course_content_indices("r1", 7, 10, 1000)
+    assert a != plan.course_content_indices("r2", 7, 10, 1000)
+    assert a != plan.course_content_indices("r1", 8, 10, 1000)

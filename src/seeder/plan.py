@@ -31,11 +31,16 @@ def enrol_key(run_id: str, course_i: int, user_i: int) -> str:
     return f"{run_id}_enrol_{course_i:04d}_{user_i:05d}"
 
 
-def course_content_indices(course_i: int, contents_per_course: int,
+def course_content_indices(run_id: str, course_i: int, contents_per_course: int,
                            total_contents: int) -> list[int]:
-    """1-based content indices for a 1-based course index, round-robin."""
-    start = (course_i - 1) * contents_per_course
-    return [((start + t) % total_contents) + 1 for t in range(contents_per_course)]
+    """1-based content indices for a course: a seeded random pick, no repeats inside a course.
+
+    Deterministic per (run_id, course), so a rerun rebuilds the same course.
+    """
+    if contents_per_course > total_contents:
+        raise ValueError("contents_per_course cannot exceed total contents")
+    rng = random.Random(f"{run_id}:course:{course_i}")
+    return rng.sample(range(1, total_contents + 1), contents_per_course)
 
 
 def batch_user_indices(course_i: int, users_per_batch: int,
