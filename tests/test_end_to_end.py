@@ -22,18 +22,30 @@ class FakeSunbird:
         self.status = {}
         self.enrolled = set()
         self.flaky_once = True
+        self.root_org = None
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
         p = req.url.path
         ok = lambda result: httpx.Response(200, json={"result": result})
         if p.endswith("/openid-connect/token"):
+            user = dict(httpx.QueryParams(req.content.decode()))["username"]
             return httpx.Response(200, json={"access_token": "kc-only",
-                                             "refresh_token": f"r{next(self.ids)}",
+                                             "refresh_token": f"r:{user}:{next(self.ids)}",
                                              "expires_in": 600})
         if p == "/auth/v1/refresh/token":
-            return ok({"access_token": f"tok{next(self.ids)}"})
-        if req.headers.get("x-authenticated-user-token") == "kc-only":
+            rt = dict(httpx.QueryParams(req.content.decode()))["refresh_token"]
+            return ok({"access_token": "tok" + rt[1:]})
+        token = req.headers.get("x-authenticated-user-token", "")
+        if token == "kc-only":
             return httpx.Response(401, text="keycloak token not accepted")
+        who = token.split(":")[1] if token.startswith("tok:") else None
+        if p.startswith("/api/user/"):
+            assert who == "a"
+        elif "/publish/" in p:
+            assert who == "reviewer_login"
+        elif p.startswith(("/api/content/", "/api/collection/")) and "/read/" not in p \
+                or p == "/api/course/v1/batch/create":
+            assert who == "creator_login", (p, who)
         if p == "/api/user/v1/create":
             r = json.loads(req.content)["request"]
             assert r["channel"] == "custodian" and r["roles"] == ["PUBLIC"]
@@ -43,6 +55,7 @@ class FakeSunbird:
                 return httpx.Response(503)
             return ok({"userId": f"user-{next(self.ids)}"})
         if p in ("/api/content/v1/create", "/api/collection/v1/create"):
+            assert json.loads(req.content)["request"]["content"]["createdBy"] == "creator"
             ident = f"do_{next(self.ids)}"
             self.status[ident] = "Draft"
             return ok({"identifier": ident})
@@ -52,6 +65,8 @@ class FakeSunbird:
             self.status[p.rsplit("/", 1)[1]] = "Review"
             return ok({})
         if "/publish/" in p:
+            body = json.loads(req.content)["request"]["content"]
+            assert body["lastPublishedBy"] == "reviewer"
             self.status[p.rsplit("/", 1)[1]] = "Live"
             return ok({})
         if "/read/" in p:
@@ -59,6 +74,9 @@ class FakeSunbird:
         if p == "/api/collection/v1/hierarchy/update":
             return ok({})
         if p == "/api/course/v1/batch/create":
+            r = json.loads(req.content)["request"]
+            assert r["createdBy"] == "creator" and r["createdFor"] == [self.root_org]
+            assert r["endDate"] is None and r["mentors"] == [] and r["tandc"] is True
             return ok({"batchId": f"batch-{next(self.ids)}"})
         if p == "/api/course/v1/enrol":
             r = json.loads(req.content)["request"]
@@ -91,9 +109,14 @@ async def test_full_pipeline(tmp_path, monkeypatch):
            "contents_per_course": 4, "units_per_course": 2, "users_per_batch": 8,
            "export": {"read_rows": 50, "skew": 1.0, "seed": 1}}
     secrets = {"SUNBIRD_API_KEY": "k", "ADMIN_USERNAME": "a", "ADMIN_PASSWORD": "p",
-               "ADMIN_USER_ID": "admin", "TEST_USER_PASSWORD": "pw"}
+               "ADMIN_USER_ID": "admin", "CONTENT_CREATOR_ID": "creator",
+               "CONTENT_REVIEWER_ID": "reviewer",
+               "CONTENT_CREATOR_USERNAME": "creator_login", "CONTENT_CREATOR_PASSWORD": "c",
+               "CONTENT_REVIEWER_USERNAME": "reviewer_login", "CONTENT_REVIEWER_PASSWORD": "r",
+               "TEST_USER_PASSWORD": "pw"}
     settings = Settings(env=env, volumes=vol, secrets=secrets)
     fake = FakeSunbird()
+    fake.root_org = env["root_org_id"]
     store = Store(settings.output_dir / "state.db")
     client = SunbirdClient(settings, transport=httpx.MockTransport(fake))
     ctx = Ctx(settings, store, client)

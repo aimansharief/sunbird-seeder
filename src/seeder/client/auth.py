@@ -1,4 +1,4 @@
-"""Tokens for the admin and for learners.
+"""Tokens for the staff roles (admin, creator, reviewer) and for learners.
 
 Login is two steps: a Keycloak grant returns a refresh_token, which Sunbird's
 refresh endpoint exchanges for the access token the APIs accept.
@@ -21,8 +21,7 @@ class Auth:
     def __init__(self, settings: Settings, http: httpx.AsyncClient):
         self.s = settings
         self.http = http
-        self._admin_token: str | None = None
-        self._admin_expiry = 0.0
+        self._tokens: dict[str, tuple[str, float]] = {}  # role -> (token, expiry)
         self._lock = asyncio.Lock()
 
     @property
@@ -59,21 +58,24 @@ class Auth:
         grant = await self.keycloak_grant(form)
         return await self.refresh(grant["refresh_token"], int(grant.get("expires_in", 300)))
 
-    async def admin_token(self) -> str:
+    async def role_token(self, role: str = "admin") -> str:
         async with self._lock:
-            if self._admin_token and time.time() < self._admin_expiry - 60:
-                return self._admin_token
+            cached = self._tokens.get(role)
+            if cached and time.time() < cached[1] - 60:
+                return cached[0]
+            username, password = self.s.role_login(role)
             kc = self.s.env["keycloak"]
-            form = {"client_id": kc["admin_client_id"],
-                    "grant_type": kc.get("admin_grant_type", "password"),
-                    "username": self.s.secrets["ADMIN_USERNAME"],
-                    "password": self.s.secrets["ADMIN_PASSWORD"]}
-            token, ttl = await self.login(form)
-            self._admin_token, self._admin_expiry = token, time.time() + ttl
+            token, ttl = await self.login({"client_id": kc["admin_client_id"],
+                                           "grant_type": kc.get("admin_grant_type", "password"),
+                                           "username": username, "password": password})
+            self._tokens[role] = (token, time.time() + ttl)
             return token
 
-    def invalidate_admin(self) -> None:
-        self._admin_token = None
+    async def admin_token(self) -> str:
+        return await self.role_token("admin")
+
+    def invalidate(self, role: str = "admin") -> None:
+        self._tokens.pop(role, None)
 
     async def user_token(self, username: str) -> tuple[str, int]:
         return await self.login({"client_id": self.s.env["keycloak"]["user_client_id"],

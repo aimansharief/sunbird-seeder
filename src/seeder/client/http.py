@@ -35,7 +35,8 @@ class SunbirdClient:
     async def close(self) -> None:
         await self.http.aclose()
 
-    async def _headers(self, name: str, as_admin: bool, user_token: str | None) -> dict:
+    async def _headers(self, name: str, as_admin: bool, user_token: str | None,
+                       role: str) -> dict:
         # Local calls go straight to the service, so there is no Kong API key.
         headers = {}
         if self.s.mode == "public":
@@ -44,18 +45,20 @@ class SunbirdClient:
         if user_token:
             headers["x-authenticated-user-token"] = user_token
         elif as_admin and self.s.needs_user_token(name):
-            headers["x-authenticated-user-token"] = await self.auth.admin_token()
+            headers["x-authenticated-user-token"] = await self.auth.role_token(role)
         return headers
 
     async def call(self, name: str, *, id: str | None = None, json: dict | None = None,
                    files: dict | None = None, params: dict | None = None,
-                   as_admin: bool = True, user_token: str | None = None) -> dict:
+                   as_admin: bool = True, user_token: str | None = None,
+                   role: str = "admin") -> dict:
+        """role picks the staff token: admin, creator or reviewer."""
         method, path = self.s.endpoint(name)
         if "{id}" in path:
             path = path.replace("{id}", str(id))
         last_status, last_body = None, ""
         for attempt in range(self.retries + 1):
-            headers = await self._headers(name, as_admin, user_token)
+            headers = await self._headers(name, as_admin, user_token, role)
             try:
                 resp = await self.http.request(method, path, json=json, files=files,
                                                params=params, headers=headers)
@@ -66,7 +69,7 @@ class SunbirdClient:
                     return resp.json() if resp.content else {}
                 last_status, last_body = resp.status_code, resp.text
                 if resp.status_code == 401 and as_admin and not user_token:
-                    self.auth.invalidate_admin()
+                    self.auth.invalidate(role)
                 elif resp.status_code not in RETRYABLE_STATUS:
                     raise ApiError(name, last_status, last_body)
             if attempt < self.retries:

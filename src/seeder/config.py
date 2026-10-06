@@ -13,6 +13,12 @@ SECRET_KEYS = [
     "ADMIN_USERNAME",
     "ADMIN_PASSWORD",
     "ADMIN_USER_ID",
+    "CONTENT_CREATOR_ID",
+    "CONTENT_CREATOR_USERNAME",
+    "CONTENT_CREATOR_PASSWORD",
+    "CONTENT_REVIEWER_ID",
+    "CONTENT_REVIEWER_USERNAME",
+    "CONTENT_REVIEWER_PASSWORD",
     "KEYCLOAK_CLIENT_SECRET",
     "TEST_USER_PASSWORD",
 ]
@@ -33,6 +39,35 @@ class Settings:
         path = Path(self.env.get("output_root", "output")) / self.run_id
         path.mkdir(parents=True, exist_ok=True)
         return path
+
+    def _role_prefix(self, role: str) -> str | None:
+        """.env prefix for a role with its own account, or None to act as the admin."""
+        prefix = {"creator": "CONTENT_CREATOR", "reviewer": "CONTENT_REVIEWER"}.get(role)
+        return prefix if prefix and self.secrets.get(f"{prefix}_USERNAME") else None
+
+    def role_login(self, role: str) -> tuple[str, str]:
+        prefix = self._role_prefix(role)
+        if prefix is None:
+            return self.secrets["ADMIN_USERNAME"], self.secrets["ADMIN_PASSWORD"]
+        return self.secrets[f"{prefix}_USERNAME"], self.secrets[f"{prefix}_PASSWORD"]
+
+    def role_user_id(self, role: str) -> str:
+        prefix = self._role_prefix(role)
+        if prefix is None:
+            return self.secrets["ADMIN_USER_ID"]
+        if not self.secrets.get(f"{prefix}_ID"):
+            raise ValueError(f"{prefix}_USERNAME is set, so {prefix}_ID is required")
+        return self.secrets[f"{prefix}_ID"]
+
+    @property
+    def creator_id(self) -> str:
+        """createdBy on content, courses and batches."""
+        return self.role_user_id("creator")
+
+    @property
+    def reviewer_id(self) -> str:
+        """lastPublishedBy on content and course publish."""
+        return self.role_user_id("reviewer")
 
     @property
     def mode(self) -> str:

@@ -34,7 +34,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `config/bench.yaml` | Environment, `mode` (`public` via Kong / `local` internal services), endpoints for each mode, concurrency, polling |
 | `config/volumes.yaml` | `run_id`, entity counts, export weighting |
 | `src/seeder/client/http.py` | Single HTTP client: headers, retry on 429/5xx/transport errors, refresh admin token on 401 |
-| `src/seeder/client/auth.py` | Login for admin and learners: Keycloak grant → `refresh_token` → `/auth/v1/refresh/token` → API access token |
+| `src/seeder/client/auth.py` | Login for admin, content creator, reviewer and learners: Keycloak grant → `refresh_token` → `/auth/v1/refresh/token` → API access token |
 | `src/seeder/api/` | Thin wrappers: build payload, call endpoint, parse IDs |
 | `src/seeder/payloads/builders.py` | All request bodies |
 | `src/seeder/stages/` | Orchestration and status transitions per entity |

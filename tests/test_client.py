@@ -132,3 +132,15 @@ async def test_learner_login_sends_client_secret():
     assert forms == [{"client_id": "android", "grant_type": "password", "username": "user1_t",
                       "password": "pw", "client_secret": "s"}]
     await c.close()
+
+
+def test_roles_fall_back_to_admin_and_require_id_when_set():
+    base = {"ADMIN_USERNAME": "a", "ADMIN_PASSWORD": "p", "ADMIN_USER_ID": "admin-id"}
+    s = Settings(env=ENV, volumes={}, secrets=base)
+    assert s.role_login("creator") == ("a", "p") and s.creator_id == "admin-id"
+
+    s = Settings(env=ENV, volumes={}, secrets=dict(
+        base, CONTENT_CREATOR_USERNAME="cr", CONTENT_CREATOR_PASSWORD="cp"))
+    assert s.role_login("creator") == ("cr", "cp") and s.reviewer_id == "admin-id"
+    with pytest.raises(ValueError):
+        s.creator_id
