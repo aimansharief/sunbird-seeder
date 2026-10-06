@@ -13,9 +13,7 @@ email_domain: bench.example.com
 keycloak:
   url: https://your-spark-host/auth
   realm: sunbird
-  admin_client_id: lms        # VERIFY: client used for the admin grant
-  admin_grant_type: password
-  user_client_id: android     # VERIFY: client used for learner password grants
+  client_id: lms  # VERIFY: Keycloak client for all logins (KEYCLOAK_CLIENT_SECRET belongs to it)
 
 # Headers sent on every request.
 extra_headers:
@@ -29,8 +27,6 @@ step_delay_s: 1               # pause between create/upload/publish
 publish_poll:
   interval_s: 10
   timeout_s: 1800
-
-enrol_as: user                # user = learner's own token; admin = admin token
 
 # "METHOD /path". {id} is replaced at call time.
 # VERIFY every entry against your Spark deployment before the first run.
@@ -53,7 +49,7 @@ endpoints:
   enrol:              POST /api/course/v1/enrol
 
 # Used when mode: local. Calls go straight to each service, without Kong or the
-# API key. user_token: true sends the admin's x-authenticated-user-token.
+# API key. user_token: true sends the caller's x-authenticated-user-token.
 # Login (Keycloak + refresh_token) always uses the public routes above.
 # VERIFY hosts and paths against your Spark deployment.
 local:

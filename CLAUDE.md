@@ -76,8 +76,7 @@ Dependency order: users and content are independent; content (Live) → course (
 | Local service hosts, internal paths and which need `user_token` | `config/bench.yaml` → `local` |
 | Request body fields (user create, content/course create, hierarchy, batch, enrol) | `payloads/builders.py` |
 | Response fields used for IDs (`userId`, `identifier`, `batchId`) and user search shape | `api/*.py` |
-| Whether enrol needs the learner token (`enrol_as`) | `config/bench.yaml` |
-| Keycloak client IDs, password grant, and the refresh endpoint response shape (`result.access_token`) | `config/bench.yaml`, `client/auth.py` |
+| Keycloak `client_id`, password grant, and the refresh endpoint response shape (`result.access_token`) | `config/bench.yaml`, `client/auth.py` |
 | `custodian_channel` value sent on user create | `config/bench.yaml` |
 | Error text used to detect "already exists" / "already enrolled" | `api/users.py`, `api/enrolments.py` |
 

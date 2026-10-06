@@ -64,9 +64,8 @@ class Auth:
             if cached and time.time() < cached[1] - 60:
                 return cached[0]
             username, password = self.s.role_login(role)
-            kc = self.s.env["keycloak"]
-            token, ttl = await self.login({"client_id": kc["admin_client_id"],
-                                           "grant_type": kc.get("admin_grant_type", "password"),
+            token, ttl = await self.login({"client_id": self.s.env["keycloak"]["client_id"],
+                                           "grant_type": "password",
                                            "username": username, "password": password})
             self._tokens[role] = (token, time.time() + ttl)
             return token
@@ -78,6 +77,6 @@ class Auth:
         self._tokens.pop(role, None)
 
     async def user_token(self, username: str) -> tuple[str, int]:
-        return await self.login({"client_id": self.s.env["keycloak"]["user_client_id"],
+        return await self.login({"client_id": self.s.env["keycloak"]["client_id"],
                                  "grant_type": "password", "username": username,
                                  "password": self.s.secrets["TEST_USER_PASSWORD"]})

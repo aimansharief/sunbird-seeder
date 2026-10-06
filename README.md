@@ -10,7 +10,7 @@ Creates test data in Sunbird Spark (users, Live content, Live courses, batches, 
 |---|---|
 | `SUNBIRD_API_KEY` | Kong API key |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Admin login that creates the data |
-| `KEYCLOAK_CLIENT_SECRET` | Secret of the admin Keycloak client |
+| `KEYCLOAK_CLIENT_SECRET` | Secret of the Keycloak client (`keycloak.client_id`) |
 | `ADMIN_USER_ID` | Admin's Sunbird user ID (not needed for users) |
 | `CONTENT_CREATOR_USERNAME`, `_PASSWORD`, `_ID` | Creator account: creates content, courses and batches. Empty = admin |
 | `CONTENT_REVIEWER_USERNAME`, `_PASSWORD`, `_ID` | Reviewer account: publishes content and courses. Empty = admin |
@@ -24,7 +24,7 @@ The admin needs the role to create users. The creator and reviewer need roles to
 |---|---|---|
 | `mode` | `public` = through Kong, `local` = direct to services | `public` |
 | `base_url` | Sunbird host | `https://your-spark-host` |
-| `keycloak` | Keycloak URL, realm and admin client | `https://your-spark-host/auth` |
+| `keycloak` | Keycloak URL, realm and `client_id` used for every login | `https://your-spark-host/auth` |
 | `custodian_channel` | Channel name for new users | `sunbird` |
 | `channel`, `root_org_id`, `framework` | Used for content and courses | - |
 | `local.hosts` | Service URLs, `local` mode only | `http://localhost:9000` |

@@ -80,6 +80,7 @@ class FakeSunbird:
             return ok({"batchId": f"batch-{next(self.ids)}"})
         if p == "/api/course/v1/enrol":
             r = json.loads(req.content)["request"]
+            assert who and who.startswith("user") and who.endswith("_t1")   # learner's own token
             self.enrolled.add((r["userId"], r["batchId"]))
             return ok({"response": "SUCCESS"})
         return httpx.Response(404, text=p)

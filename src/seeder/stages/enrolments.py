@@ -12,7 +12,6 @@ log = logging.getLogger(__name__)
 
 async def seed(ctx: Ctx) -> int:
     store, run, vol = ctx.store, ctx.run_id, ctx.vol
-    as_user = ctx.env.get("enrol_as", "user") == "user"
     jobs: dict[str, tuple[str, int, dict]] = {}
 
     for b in store.list("batch", "created"):
@@ -29,16 +28,14 @@ async def seed(ctx: Ctx) -> int:
     async def work(ekey: str) -> None:
         ukey, ui, b = jobs[ekey]
         user = store.get("user", ukey)
-        token = None
-        if as_user:
-            data = user["data"]
-            fresh = time.time() - data.get("token_at", 0) < data.get("token_ttl", 0) - 60
-            if fresh:
-                token = data["token"]
-            else:
-                token, ttl = await ctx.client.auth.user_token(ukey)
-                store.upsert("user", ukey, "created",
-                             data={"token": token, "token_at": time.time(), "token_ttl": ttl})
+        # Enrol is called with the learner's own token.
+        data = user["data"]
+        if time.time() - data.get("token_at", 0) < data.get("token_ttl", 0) - 60:
+            token = data["token"]
+        else:
+            token, ttl = await ctx.client.auth.user_token(ukey)
+            store.upsert("user", ukey, "created",
+                         data={"token": token, "token_at": time.time(), "token_ttl": ttl})
         await api.enrol(ctx.client, user["remote_id"], b["data"]["course_id"],
                         b["remote_id"], user_token=token)
         store.upsert(KIND, ekey, "enrolled", data={

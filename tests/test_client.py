@@ -6,7 +6,7 @@ from seeder.config import Settings
 
 ENV = {"base_url": "https://sb.test", "retries": 2, "extra_headers": {},
        "keycloak": {"url": "https://sb.test/auth", "realm": "sunbird",
-                    "admin_client_id": "lms", "user_client_id": "android"},
+                    "client_id": "test-client"},
        "endpoints": {"content_read": "GET /api/content/v1/read/{id}",
                      "refresh_token": "POST /auth/v1/refresh/token"}}
 SECRETS = {"SUNBIRD_API_KEY": "k", "ADMIN_USERNAME": "a", "ADMIN_PASSWORD": "p"}
@@ -85,7 +85,7 @@ async def test_admin_login_exchanges_refresh_token():
     assert await c.auth.admin_token() == "api-tok"
     (kc_path, kc_auth, kc_form), (rf_path, rf_auth, rf_form) = seen
     assert kc_path == "/auth/realms/sunbird/protocol/openid-connect/token"
-    assert kc_form == {"client_id": "lms", "grant_type": "password",
+    assert kc_form == {"client_id": "test-client", "grant_type": "password",
                        "username": "a", "password": "p"}
     assert rf_path == "/auth/v1/refresh/token" and rf_form == {"refresh_token": "r1"}
     assert kc_auth == rf_auth == "Bearer k"
@@ -129,7 +129,7 @@ async def test_learner_login_sends_client_secret():
     c = SunbirdClient(Settings(env=ENV, volumes={"run_id": "t"}, secrets=secrets),
                       transport=httpx.MockTransport(handler))
     assert (await c.auth.user_token("user1_t"))[0] == "t"
-    assert forms == [{"client_id": "android", "grant_type": "password", "username": "user1_t",
+    assert forms == [{"client_id": "test-client", "grant_type": "password", "username": "user1_t",
                       "password": "pw", "client_secret": "s"}]
     await c.close()
 
