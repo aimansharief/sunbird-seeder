@@ -37,7 +37,8 @@ The admin account needs roles to create users, create and review content, publis
 
 | Check | Where |
 |---|---|
-| Endpoint paths and methods | `config/bench.yaml` → `endpoints` |
+| `mode`: `public` (Kong) or `local` (internal services) | `config/bench.yaml` → `mode` |
+| Endpoint paths and methods | `config/bench.yaml` → `endpoints` (public), `local` (local) |
 | Request bodies and required fields | `src/seeder/payloads/builders.py` |
 | Response fields read for IDs | `src/seeder/api/*.py` |
 | Keycloak clients allow password grant | `config/bench.yaml` → `keycloak` |

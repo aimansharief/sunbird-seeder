@@ -35,12 +35,15 @@ class SunbirdClient:
     async def close(self) -> None:
         await self.http.aclose()
 
-    async def _headers(self, as_admin: bool, user_token: str | None) -> dict:
-        headers = {"Authorization": f"Bearer {self.s.secrets['SUNBIRD_API_KEY']}"}
+    async def _headers(self, name: str, as_admin: bool, user_token: str | None) -> dict:
+        # Local calls go straight to the service, so there is no Kong API key.
+        headers = {}
+        if self.s.mode == "public":
+            headers["Authorization"] = f"Bearer {self.s.secrets['SUNBIRD_API_KEY']}"
         headers.update(self.s.env.get("extra_headers") or {})
         if user_token:
             headers["x-authenticated-user-token"] = user_token
-        elif as_admin:
+        elif as_admin and self.s.needs_user_token(name):
             headers["x-authenticated-user-token"] = await self.auth.admin_token()
         return headers
 
@@ -52,7 +55,7 @@ class SunbirdClient:
             path = path.replace("{id}", str(id))
         last_status, last_body = None, ""
         for attempt in range(self.retries + 1):
-            headers = await self._headers(as_admin, user_token)
+            headers = await self._headers(name, as_admin, user_token)
             try:
                 resp = await self.http.request(method, path, json=json, files=files,
                                                params=params, headers=headers)

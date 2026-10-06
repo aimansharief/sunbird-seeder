@@ -34,9 +34,36 @@ class Settings:
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    @property
+    def mode(self) -> str:
+        mode = self.env.get("mode", "public")
+        if mode not in ("public", "local"):
+            raise ValueError(f"mode must be 'public' or 'local', got {mode!r}")
+        return mode
+
     def endpoint(self, name: str) -> tuple[str, str]:
+        """(method, path or URL) for the active mode."""
+        if self.mode == "local":
+            local = self.env["local"]
+            if name not in local["endpoints"]:
+                raise KeyError(f"endpoint {name!r} missing from local.endpoints")
+            route = local["endpoints"][name]["route"]
+            for service, host in local["hosts"].items():
+                route = route.replace("{" + service + "}", host.rstrip("/"))
+        else:
+            route = self.env["endpoints"][name]
+        method, path = route.split(None, 1)
+        return method.upper(), path.strip()
+
+    def public_endpoint(self, name: str) -> tuple[str, str]:
         method, path = self.env["endpoints"][name].split(None, 1)
         return method.upper(), path.strip()
+
+    def needs_user_token(self, name: str) -> bool:
+        """Public calls always send it; local calls only where configured."""
+        if self.mode == "public":
+            return True
+        return bool(self.env["local"]["endpoints"][name].get("user_token", False))
 
 
 def load_settings(env_path: str = "config/bench.yaml",
