@@ -90,3 +90,28 @@ async def test_admin_login_exchanges_refresh_token():
     assert rf_path == "/auth/v1/refresh/token" and rf_form == {"refresh_token": "r1"}
     assert kc_auth == rf_auth == "Bearer k"
     await c.close()
+
+
+async def test_local_mode_routes_to_services_without_api_key():
+    seen = {}
+
+    def handler(req):
+        if (auth := fake_auth(req)) is not None:
+            return auth
+        seen[req.url.path] = (str(req.url), req.headers.get("Authorization"),
+                              req.headers.get("x-authenticated-user-token"))
+        return httpx.Response(200, json={"result": {}})
+
+    env = dict(ENV, mode="local", local={
+        "hosts": {"userorg": "http://userorg:9000", "content": "http://content:9000/"},
+        "endpoints": {
+            "user_create": {"route": "POST {userorg}/v1/user/create", "user_token": True},
+            "content_read": {"route": "GET {content}/content/v3/read/{id}"}}})
+    c = SunbirdClient(Settings(env=env, volumes={"run_id": "t"}, secrets=SECRETS),
+                      transport=httpx.MockTransport(handler))
+    await c.call("user_create", json={})
+    await c.call("content_read", id="do_1")
+    assert seen["/v1/user/create"] == ("http://userorg:9000/v1/user/create", None, "t")
+    assert seen["/content/v3/read/do_1"] == ("http://content:9000/content/v3/read/do_1",
+                                             None, None)
+    await c.close()

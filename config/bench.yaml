@@ -1,4 +1,5 @@
 # Environment settings. Secrets come from .env, not this file.
+mode: public                  # public = via Kong (endpoints); local = internal services (local)
 base_url: https://your-spark-host
 output_root: output
 
@@ -51,3 +52,29 @@ endpoints:
   course_retire:      DELETE /api/collection/v1/retire/{id}
   batch_create:       POST /api/course/v1/batch/create
   enrol:              POST /api/course/v1/enrol
+
+# Used when mode: local. Calls go straight to each service, without Kong or the
+# API key. user_token: true sends the admin's x-authenticated-user-token.
+# Login (Keycloak + refresh_token) always uses the public routes above.
+# VERIFY hosts and paths against your Spark deployment.
+local:
+  hosts:
+    lern: http://lern-service:9000          # users, batches, enrolments (userorg + lms)
+    knowlg: http://knowlg-service:9000      # content and courses
+  endpoints:
+    user_create:      {route: "POST {lern}/v1/user/create", user_token: true}
+    user_search:      {route: "POST {lern}/v1/user/search", user_token: true}
+    content_create:   {route: "POST {knowlg}/content/v3/create"}
+    content_upload:   {route: "POST {knowlg}/content/v3/upload/{id}"}
+    content_review:   {route: "POST {knowlg}/content/v3/review/{id}"}
+    content_publish:  {route: "POST {knowlg}/content/v3/publish/{id}"}
+    content_read:     {route: "GET {knowlg}/content/v3/read/{id}"}
+    content_retire:   {route: "DELETE {knowlg}/content/v3/retire/{id}"}
+    course_create:    {route: "POST {knowlg}/collection/v4/create"}
+    course_hierarchy: {route: "PATCH {knowlg}/collection/v4/hierarchy/update"}
+    course_review:    {route: "POST {knowlg}/collection/v4/review/{id}"}
+    course_publish:   {route: "POST {knowlg}/collection/v4/publish/{id}"}
+    course_read:      {route: "GET {knowlg}/collection/v4/read/{id}"}
+    course_retire:    {route: "DELETE {knowlg}/collection/v4/retire/{id}"}
+    batch_create:     {route: "POST {lern}/v1/course/batch/create", user_token: true}
+    enrol:            {route: "POST {lern}/v1/course/enroll", user_token: true}

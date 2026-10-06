@@ -42,7 +42,8 @@ class Auth:
         return resp.json()
 
     async def refresh(self, refresh_token: str, fallback_ttl: int) -> tuple[str, int]:
-        method, path = self.s.endpoint("refresh_token")
+        # Login always goes through the public route, in either mode.
+        method, path = self.s.public_endpoint("refresh_token")
         resp = await self.http.request(method, path, data={"refresh_token": refresh_token},
                                        headers=self._api_key_header)
         if resp.status_code != 200:

@@ -24,3 +24,8 @@ def test_split_units_even():
 def test_worker_split_has_no_overlap():
     owners = {u: plan.worker_for_user(u, 4) for u in range(1, 10001)}
     assert Counter(owners.values()) == {1: 2500, 2: 2500, 3: 2500, 4: 2500}
+
+
+def test_user_key_is_readable_and_run_scoped():
+    assert plan.user_key("bench01", 1) == "user1_bench01"
+    assert plan.user_key("bench01", 10000) == "user10000_bench01"

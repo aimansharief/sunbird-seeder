@@ -2,8 +2,8 @@ from seeder.client.http import ApiError, SunbirdClient
 from seeder.payloads import builders as b
 
 
-async def create(c: SunbirdClient, key: str) -> str:
-    body = b.user_create(key, c.s.env, c.s.secrets["TEST_USER_PASSWORD"])
+async def create(c: SunbirdClient, key: str, index: int) -> str:
+    body = b.user_create(key, index, c.s.env, c.s.secrets["TEST_USER_PASSWORD"])
     try:
         res = await c.call("user_create", json=body)
         return res["result"]["userId"]

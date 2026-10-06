@@ -31,7 +31,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 
 | Path | Responsibility |
 |---|---|
-| `config/bench.yaml` | Environment, all endpoint paths (`"METHOD /path/{id}"`), concurrency, polling |
+| `config/bench.yaml` | Environment, `mode` (`public` via Kong / `local` internal services), endpoints for each mode, concurrency, polling |
 | `config/volumes.yaml` | `run_id`, entity counts, export weighting |
 | `src/seeder/client/http.py` | Single HTTP client: headers, retry on 429/5xx/transport errors, refresh admin token on 401 |
 | `src/seeder/client/auth.py` | Login for admin and learners: Keycloak grant → `refresh_token` → `/auth/v1/refresh/token` → API access token |
@@ -50,8 +50,8 @@ Dependency order: users and content are independent; content (Live) → course (
 - SQLite is the source of truth during seeding; CSVs are generated from it at the end. Do not track state in CSVs.
 - Every stage must be resumable. Skip items already at their final status; resume others from their last status.
 - `store.upsert` records a successful step and clears the error. `store.mark_error` records a failure without changing status.
-- Names are deterministic and prefixed with `run_id` (`bench01_user_00001`). Assignment logic stays in `plan.py` with tests.
-- Endpoints belong in `config/bench.yaml`, never hard-coded. Request bodies belong in `payloads/builders.py`.
+- Names are deterministic and include `run_id` (users: `user1_bench01`, display name "User 1"; others: `bench01_content_00001`). Assignment logic stays in `plan.py` with tests.
+- Endpoints belong in `config/bench.yaml`, never hard-coded. Add each new endpoint to both `endpoints` (public) and `local.endpoints`. Request bodies belong in `payloads/builders.py`.
 - Secrets come from `.env` only. Never commit `.env` or `output/`.
 - New behaviour needs a test. `tests/test_end_to_end.py` uses a fake Sunbird via `httpx.MockTransport`; extend `FakeSunbird` when adding endpoints.
 
@@ -74,6 +74,7 @@ Dependency order: users and content are independent; content (Live) → course (
 | Item | Where |
 |---|---|
 | Endpoint paths, especially collection create/review/publish/read and hierarchy update | `config/bench.yaml` |
+| Local service hosts, internal paths and which need `user_token` | `config/bench.yaml` → `local` |
 | Request body fields (user create, content/course create, hierarchy, batch, enrol) | `payloads/builders.py` |
 | Response fields used for IDs (`userId`, `identifier`, `batchId`) and user search shape | `api/*.py` |
 | Whether enrol needs the learner token (`enrol_as`) | `config/bench.yaml` |

@@ -37,6 +37,7 @@ class FakeSunbird:
         if p == "/api/user/v1/create":
             r = json.loads(req.content)["request"]
             assert r["channel"] == "custodian" and r["roles"] == ["PUBLIC"]
+            assert r["firstName"] == "User" and r["userName"] == f"user{r['lastName']}_t1"
             if self.flaky_once:          # exercise the retry path once
                 self.flaky_once = False
                 return httpx.Response(503)
@@ -84,7 +85,7 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     with open(os.path.join(os.path.dirname(__file__), "..", "config", "bench.yaml")) as f:
         env = yaml.safe_load(f)
     env.update(base_url="https://sb.test", output_root=str(tmp_path), retries=2,
-               custodian_channel="custodian")
+               custodian_channel="custodian", mode="public")
     env["publish_poll"] = {"interval_s": 0, "timeout_s": 5}
     vol = {"run_id": "t1", "users": 20, "contents": 12, "courses": 3,
            "contents_per_course": 4, "units_per_course": 2, "users_per_batch": 8,
