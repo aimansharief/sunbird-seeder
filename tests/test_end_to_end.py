@@ -26,10 +26,17 @@ class FakeSunbird:
     def __call__(self, req: httpx.Request) -> httpx.Response:
         p = req.url.path
         ok = lambda result: httpx.Response(200, json={"result": result})
-        if p.endswith("/token"):
-            return httpx.Response(200, json={"access_token": f"tok{next(self.ids)}",
+        if p.endswith("/openid-connect/token"):
+            return httpx.Response(200, json={"access_token": "kc-only",
+                                             "refresh_token": f"r{next(self.ids)}",
                                              "expires_in": 600})
+        if p == "/auth/v1/refresh/token":
+            return ok({"access_token": f"tok{next(self.ids)}"})
+        if req.headers.get("x-authenticated-user-token") == "kc-only":
+            return httpx.Response(401, text="keycloak token not accepted")
         if p == "/api/user/v1/create":
+            r = json.loads(req.content)["request"]
+            assert r["channel"] == "custodian" and r["roles"] == ["PUBLIC"]
             if self.flaky_once:          # exercise the retry path once
                 self.flaky_once = False
                 return httpx.Response(503)
@@ -76,7 +83,8 @@ async def test_full_pipeline(tmp_path, monkeypatch):
 
     with open(os.path.join(os.path.dirname(__file__), "..", "config", "bench.yaml")) as f:
         env = yaml.safe_load(f)
-    env.update(base_url="https://sb.test", output_root=str(tmp_path), retries=2)
+    env.update(base_url="https://sb.test", output_root=str(tmp_path), retries=2,
+               custodian_channel="custodian")
     env["publish_poll"] = {"interval_s": 0, "timeout_s": 5}
     vol = {"run_id": "t1", "users": 20, "contents": 12, "courses": 3,
            "contents_per_course": 4, "units_per_course": 2, "users_per_batch": 8,

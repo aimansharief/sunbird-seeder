@@ -6,7 +6,7 @@ Seed-data generator for the Sunbird Spark API benchmark. It creates users, Live 
 
 | Item | Detail |
 |---|---|
-| Goal | Benchmark 7 read/write APIs under load with JMeter |
+| Goal | Generate seed data (users, Live content, Live courses, batches, enrolments) and the CSVs used to benchmark 7 read/write APIs with JMeter |
 | APIs under test | Content Read, Course Hierarchy, Content Search, User Profile Read, Read Content State, Update Content State, Telemetry |
 | Run matrix | Internal route vs via Kong × self-hosted YugabyteDB vs managed YugabyteDB (Runs A–D) |
 | Load tool | Distributed JMeter; each worker gets its own `_workerN` CSV |
@@ -34,7 +34,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `config/bench.yaml` | Environment, all endpoint paths (`"METHOD /path/{id}"`), concurrency, polling |
 | `config/volumes.yaml` | `run_id`, entity counts, export weighting |
 | `src/seeder/client/http.py` | Single HTTP client: headers, retry on 429/5xx/transport errors, refresh admin token on 401 |
-| `src/seeder/client/auth.py` | Keycloak password grant for admin and learners |
+| `src/seeder/client/auth.py` | Login for admin and learners: Keycloak grant → `refresh_token` → `/auth/v1/refresh/token` → API access token |
 | `src/seeder/api/` | Thin wrappers: build payload, call endpoint, parse IDs |
 | `src/seeder/payloads/builders.py` | All request bodies |
 | `src/seeder/stages/` | Orchestration and status transitions per entity |
@@ -77,7 +77,8 @@ Dependency order: users and content are independent; content (Live) → course (
 | Request body fields (user create, content/course create, hierarchy, batch, enrol) | `payloads/builders.py` |
 | Response fields used for IDs (`userId`, `identifier`, `batchId`) and user search shape | `api/*.py` |
 | Whether enrol needs the learner token (`enrol_as`) | `config/bench.yaml` |
-| Keycloak client IDs and whether they allow password grant | `config/bench.yaml` |
+| Keycloak client IDs, password grant, and the refresh endpoint response shape (`result.access_token`) | `config/bench.yaml`, `client/auth.py` |
+| `custodian_channel` value sent on user create | `config/bench.yaml` |
 | Error text used to detect "already exists" / "already enrolled" | `api/users.py`, `api/enrolments.py` |
 
 ## Next steps
