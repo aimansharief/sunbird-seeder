@@ -25,6 +25,7 @@ concurrency: 10               # parallel requests while seeding
 token_concurrency: 20
 request_timeout_s: 30
 retries: 4
+step_delay_s: 1               # pause between create/upload/publish
 
 publish_poll:
   interval_s: 10
@@ -40,7 +41,6 @@ endpoints:
   user_search:        POST /api/user/v1/search
   content_create:     POST /api/content/v1/create
   content_upload:     POST /api/content/v1/upload/{id}
-  content_review:     POST /api/content/v1/review/{id}
   content_publish:    POST /api/content/v1/publish/{id}
   content_read:       GET  /api/content/v1/read/{id}
   content_retire:     DELETE /api/content/v1/retire/{id}
@@ -64,12 +64,11 @@ local:
   endpoints:
     user_create:      {route: "POST {lern}/v1/user/create", user_token: true}
     user_search:      {route: "POST {lern}/v1/user/search", user_token: true}
-    content_create:   {route: "POST {knowlg}/content/v3/create"}
-    content_upload:   {route: "POST {knowlg}/content/v3/upload/{id}"}
-    content_review:   {route: "POST {knowlg}/content/v3/review/{id}"}
-    content_publish:  {route: "POST {knowlg}/content/v3/publish/{id}"}
-    content_read:     {route: "GET {knowlg}/content/v3/read/{id}"}
-    content_retire:   {route: "DELETE {knowlg}/content/v3/retire/{id}"}
+    content_create:   {route: "POST {knowlg}/content/v4/create"}
+    content_upload:   {route: "POST {knowlg}/content/v4/upload/{id}"}
+    content_publish:  {route: "POST {knowlg}/content/v4/publish/{id}"}
+    content_read:     {route: "GET {knowlg}/content/v4/read/{id}"}
+    content_retire:   {route: "DELETE {knowlg}/content/v4/retire/{id}"}
     course_create:    {route: "POST {knowlg}/collection/v4/create"}
     course_hierarchy: {route: "PATCH {knowlg}/collection/v4/hierarchy/update"}
     course_review:    {route: "POST {knowlg}/collection/v4/review/{id}"}

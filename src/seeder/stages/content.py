@@ -1,10 +1,26 @@
-"""Content lifecycle: created -> uploaded -> in_review -> publish_requested -> live."""
+"""Content lifecycle (same steps as the shell scripts): created -> uploaded -> publish_requested -> live."""
+import asyncio
+
 from seeder import plan
 from seeder.api import content as api
+from seeder.client.http import ApiError
 from seeder.stages.context import Ctx
 from seeder.stages.runner import poll_until, run_all
 
 KIND = "content"
+PUBLISH_ATTEMPTS = 3
+
+
+async def publish_with_retry(c, cid: str, delay: float) -> None:
+    """Upload is processed asynchronously, so an early publish can fail; retry a few times."""
+    for attempt in range(PUBLISH_ATTEMPTS):
+        try:
+            await api.publish(c, cid)
+            return
+        except ApiError:
+            if attempt == PUBLISH_ATTEMPTS - 1:
+                raise
+            await asyncio.sleep(delay)
 
 
 async def seed(ctx: Ctx) -> int:
@@ -12,23 +28,27 @@ async def seed(ctx: Ctx) -> int:
     keys = [plan.content_key(ctx.run_id, i) for i in range(1, ctx.vol["contents"] + 1)]
     todo = [k for k in keys if store.status(KIND, k) not in ("publish_requested", "live")]
 
+    delay = ctx.env.get("step_delay_s", 1)
+    mp4_ratio = ctx.vol.get("mp4_ratio", 0.3)
+    mime = {k: plan.content_mime(ctx.run_id, i, mp4_ratio)
+            for i, k in enumerate(keys, start=1)}
+
     async def advance(key: str) -> None:
         status = store.status(KIND, key)
         if status is None:
-            cid = await api.create(c, key)
-            store.upsert(KIND, key, "created", remote_id=cid)
+            cid = await api.create(c, key, mime[key])
+            store.upsert(KIND, key, "created", remote_id=cid, data={"mime_type": mime[key]})
             status = "created"
+            await asyncio.sleep(delay)
         cid = store.get(KIND, key)["remote_id"]
         if status == "created":
-            url = await api.upload(c, cid)
+            url = await api.upload(c, cid, mime[key])
             store.upsert(KIND, key, "uploaded", data={"artifact_url": url})
             status = "uploaded"
+            # videos are processed asynchronously: wait longer before publishing
+            await asyncio.sleep(delay * (2 if mime[key] == "video/mp4" else 1))
         if status == "uploaded":
-            await api.review(c, cid)
-            store.upsert(KIND, key, "in_review")
-            status = "in_review"
-        if status == "in_review":
-            await api.publish(c, cid)
+            await publish_with_retry(c, cid, delay)
             store.upsert(KIND, key, "publish_requested")
 
     failed = await run_all("content", KIND, todo, advance, store, ctx.env["concurrency"])

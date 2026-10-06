@@ -3,24 +3,25 @@ from pathlib import Path
 from seeder.client.http import SunbirdClient
 from seeder.payloads import builders as b
 
-ASSET = Path("assets/test.pdf")
+ASSETS = {
+    "application/pdf": Path("assets/test.pdf"),
+    "video/mp4": Path("assets/test.mp4"),
+}
 
 
-async def create(c: SunbirdClient, key: str) -> str:
+async def create(c: SunbirdClient, key: str, mime_type: str) -> str:
     res = await c.call("content_create",
-                       json=b.content_create(key, c.s.env, c.s.creator_id), role="creator")
+                       json=b.content_create(key, c.s.env, c.s.creator_id, mime_type),
+                       role="creator")
     return res["result"]["identifier"]
 
 
-async def upload(c: SunbirdClient, content_id: str) -> str:
-    data = ASSET.read_bytes()
+async def upload(c: SunbirdClient, content_id: str, mime_type: str) -> str:
+    asset = ASSETS[mime_type]
     res = await c.call("content_upload", id=content_id,
-                       files={"file": (ASSET.name, data, "application/pdf")}, role="creator")
+                       files={"file": (asset.name, asset.read_bytes(), mime_type)},
+                       role="creator")
     return res.get("result", {}).get("content_url", "")
-
-
-async def review(c: SunbirdClient, content_id: str) -> None:
-    await c.call("content_review", id=content_id, json=b.review(), role="creator")
 
 
 async def publish(c: SunbirdClient, content_id: str) -> None:

@@ -99,6 +99,7 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     os.makedirs("assets", exist_ok=True)
     repo_asset = os.path.join(os.path.dirname(__file__), "..", "assets", "test.pdf")
     shutil.copy(repo_asset, "assets/test.pdf")
+    shutil.copy(repo_asset.replace("test.pdf", "test.mp4"), "assets/test.mp4")
 
     with open(os.path.join(os.path.dirname(__file__), "..", "config", "bench.yaml")) as f:
         env = yaml.safe_load(f)

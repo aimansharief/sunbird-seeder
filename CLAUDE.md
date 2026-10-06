@@ -60,7 +60,7 @@ Dependency order: users and content are independent; content (Live) → course (
 | Entity | Statuses |
 |---|---|
 | user | `created` |
-| content | `created` → `uploaded` → `in_review` → `publish_requested` → `live` |
+| content | `created` → `uploaded` → `publish_requested` → `live` (no review step) |
 | course | `created` → `hierarchy_updated` → `in_review` → `publish_requested` → `live` |
 | batch | `created` |
 | enrolment | `enrolled` |

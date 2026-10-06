@@ -1,6 +1,8 @@
 """Deterministic naming and assignment. Pure functions, no I/O."""
 from __future__ import annotations
 
+import random
+
 
 def user_key(run_id: str, i: int) -> str:
     """Also the Sunbird userName, e.g. user1_bench01."""
@@ -9,6 +11,12 @@ def user_key(run_id: str, i: int) -> str:
 
 def content_key(run_id: str, i: int) -> str:
     return f"{run_id}_content_{i:05d}"
+
+
+def content_mime(run_id: str, i: int, mp4_ratio: float) -> str:
+    """Deterministic PDF/MP4 pick, so a rerun uploads the same type for the same item."""
+    pick = random.Random(f"{run_id}:{i}").random()
+    return "video/mp4" if pick < mp4_ratio else "application/pdf"
 
 
 def course_key(run_id: str, i: int) -> str:

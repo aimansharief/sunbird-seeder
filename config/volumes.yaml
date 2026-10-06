@@ -3,6 +3,7 @@ run_id: bench01
 
 users: 10000
 contents: 1000
+mp4_ratio: 0.3              # share of contents that are videos; the rest are PDFs (deterministic per run_id)
 courses: 105
 contents_per_course: 10
 units_per_course: 2
