@@ -6,11 +6,15 @@ refresh endpoint exchanges for the access token the APIs accept.
 from __future__ import annotations
 
 import asyncio
+import random
 import time
 
 import httpx
 
 from seeder.config import Settings
+
+
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class TokenError(Exception):
@@ -33,8 +37,23 @@ class Auth:
     def _api_key_header(self) -> dict:
         return {"Authorization": f"Bearer {self.s.secrets['SUNBIRD_API_KEY']}"}
 
+    async def _send(self, method: str, url: str, form: dict) -> httpx.Response:
+        """Login request, retried on 429/5xx and transport errors like other API calls."""
+        retries = int(self.s.env.get("retries", 4))
+        for attempt in range(retries + 1):
+            try:
+                resp = await self.http.request(method, url, data=form,
+                                               headers=self._api_key_header)
+                if resp.status_code not in RETRYABLE_STATUS or attempt == retries:
+                    return resp
+            except httpx.TransportError:
+                if attempt == retries:
+                    raise
+            await asyncio.sleep(min(2 ** attempt, 30) + random.random())
+        raise AssertionError("unreachable")
+
     async def keycloak_grant(self, form: dict) -> dict:
-        resp = await self.http.post(self._token_url, data=form, headers=self._api_key_header)
+        resp = await self._send("POST", self._token_url, form)
         if resp.status_code != 200:
             raise TokenError(f"token grant failed for {form.get('username')}: "
                              f"{resp.status_code} {resp.text[:300]}")
@@ -43,8 +62,7 @@ class Auth:
     async def refresh(self, refresh_token: str, fallback_ttl: int) -> tuple[str, int]:
         # Login always goes through the public route, in either mode.
         method, path = self.s.public_endpoint("refresh_token")
-        resp = await self.http.request(method, path, data={"refresh_token": refresh_token},
-                                       headers=self._api_key_header)
+        resp = await self._send(method, path, {"refresh_token": refresh_token})
         if resp.status_code != 200:
             raise TokenError(f"refresh token failed: {resp.status_code} {resp.text[:300]}")
         body = resp.json()

@@ -7,12 +7,10 @@ import random
 
 import httpx
 
-from seeder.client.auth import Auth
+from seeder.client.auth import RETRYABLE_STATUS, Auth
 from seeder.config import Settings
 
 log = logging.getLogger(__name__)
-
-RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class ApiError(Exception):

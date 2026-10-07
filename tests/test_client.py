@@ -31,6 +31,7 @@ def no_sleep(monkeypatch):
     async def instant(_):
         return None
     monkeypatch.setattr("seeder.client.http.asyncio.sleep", instant)
+    monkeypatch.setattr("seeder.client.auth.asyncio.sleep", instant)
 
 
 async def test_retries_then_succeeds():
@@ -144,3 +145,35 @@ def test_roles_fall_back_to_admin_and_require_id_when_set():
     assert s.role_login("creator") == ("cr", "cp") and s.reviewer_id == "admin-id"
     with pytest.raises(ValueError):
         s.creator_id
+
+
+async def test_login_retries_rate_limited_refresh():
+    calls = {"refresh": 0}
+
+    def handler(req):
+        if req.url.path == "/auth/v1/refresh/token":
+            calls["refresh"] += 1
+            if calls["refresh"] < 3:
+                return httpx.Response(429, json={"message": "API rate limit exceeded"})
+        return fake_auth(req) or httpx.Response(404)
+
+    c = make_client(handler)
+    assert await c.auth.role_token("admin") == "t" and calls["refresh"] == 3
+    await c.close()
+
+
+async def test_login_uses_public_routes_in_local_mode():
+    seen = []
+
+    def handler(req):
+        seen.append((str(req.url), req.headers.get("Authorization")))
+        return fake_auth(req) or httpx.Response(404)
+
+    env = dict(ENV, mode="local", local={"hosts": {}, "endpoints": {}})
+    c = SunbirdClient(Settings(env=env, volumes={"run_id": "t"}, secrets=SECRETS),
+                      transport=httpx.MockTransport(handler))
+    assert await c.auth.role_token("admin") == "t"
+    assert seen == [
+        ("https://sb.test/auth/realms/sunbird/protocol/openid-connect/token", "Bearer k"),
+        ("https://sb.test/auth/v1/refresh/token", "Bearer k")]
+    await c.close()
