@@ -37,7 +37,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `src/seeder/api/` | Thin wrappers: build payload, call endpoint, parse IDs |
 | `src/seeder/payloads/builders.py` | All request bodies |
 | `src/seeder/stages/` | Orchestration and status transitions per entity |
-| `src/seeder/stages/runner.py` | `run_all` (bounded concurrency, records errors) and `poll_until` (async publish) |
+| `src/seeder/stages/runner.py` | `run_all` (bounded concurrency; records the error and stops at the first failure) and `poll_until` (async publish) |
 | `src/seeder/state/store.py` | SQLite `entities` table keyed by `(kind, key)` |
 | `src/seeder/plan.py` | Pure functions: names, content→course and user→batch assignment, worker split |
 | `src/seeder/export/` | CSV export: every Live ID and enrolment once; JMeter decides how to pick rows |
@@ -48,6 +48,7 @@ Dependency order: users and content are independent; content (Live) → course (
 
 - SQLite is the source of truth during seeding; CSVs are generated from it at the end. Do not track state in CSVs.
 - Every stage must be resumable. Skip items already at their final status; resume others from their last status.
+- Fail fast: the first failed request (after HTTP retries) stops the stage, and `seed all` stops at that stage.
 - `store.upsert` records a successful step and clears the error. `store.mark_error` records a failure without changing status.
 - Names are deterministic and include `run_id` (users: `user1_bench01`, display name "User 1"; others: `bench01_content_00001`). Assignment logic stays in `plan.py` with tests.
 - Endpoints belong in `config/bench.yaml`, never hard-coded. Add each new endpoint to both `endpoints` (public) and `local.endpoints`. Request bodies belong in `payloads/builders.py`.

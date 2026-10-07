@@ -60,23 +60,26 @@ def _run(coro_fn):
     return asyncio.run(go())
 
 
-@app.command()
-def seed(stage: Stage = typer.Argument(..., help="Stage to run, or 'all' in order")):
-    """Create entities for a stage. Safe to rerun: finished items are skipped."""
+async def seed_stages(ctx: Ctx, names: list[str]) -> int:
+    """Runs stages in order and stops at the first stage with a failure."""
     from seeder.stages import batches, content, courses, enrolments, users
     mods = {"users": users, "content": content, "courses": courses,
             "batches": batches, "enrolments": enrolments}
+    for name in names:
+        failed = await mods[name].seed(ctx)
+        if failed:
+            logging.error("stage %s failed; stopping. Fix the error (`seeder verify`) "
+                          "and rerun to resume.", name)
+            return failed
+        logging.info("stage %s finished", name)
+    return 0
+
+
+@app.command()
+def seed(stage: Stage = typer.Argument(..., help="Stage to run, or 'all' in order")):
+    """Create entities for a stage. Stops at the first failure; rerun to resume."""
     names = ORDER if stage == Stage.all else [stage.value]
-
-    async def go(ctx: Ctx):
-        total = 0
-        for name in names:
-            failed = await mods[name].seed(ctx)
-            logging.info("stage %s finished with %d failures", name, failed)
-            total += failed
-        return total
-
-    failed = _run(go)
+    failed = _run(lambda ctx: seed_stages(ctx, names))
     raise typer.Exit(code=1 if failed else 0)
 
 

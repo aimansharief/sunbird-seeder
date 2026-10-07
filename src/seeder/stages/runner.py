@@ -14,25 +14,32 @@ log = logging.getLogger(__name__)
 async def run_all(label: str, kind: str, keys: list[str],
                   worker: Callable[[str], Awaitable[None]],
                   store: Store, concurrency: int) -> int:
-    """Returns the number of failed keys. Failures are recorded in the store."""
+    """Returns the number of failed keys. Failures are recorded in the store.
+
+    Stops at the first failure: no new keys start, and items already in flight
+    finish so their results are recorded. A rerun resumes from there.
+    """
     total = len(keys)
     if total == 0:
         log.info("%s: nothing to do", label)
         return 0
     sem = asyncio.Semaphore(concurrency)
-    done = failed = 0
+    done = failed = skipped = 0
     step = max(1, total // 20)
     started = time.monotonic()
 
     async def one(key: str) -> None:
-        nonlocal done, failed
+        nonlocal done, failed, skipped
         async with sem:
+            if failed:
+                skipped += 1
+                return
             try:
                 await worker(key)
-            except Exception as exc:  # noqa: BLE001 - record and continue
+            except Exception as exc:  # noqa: BLE001 - record, then stop starting new keys
                 failed += 1
                 store.mark_error(kind, key, f"{type(exc).__name__}: {exc}")
-                log.debug("%s failed %s: %s", label, key, exc)
+                log.error("%s failed %s: %s", label, key, exc)
             finally:
                 done += 1
                 if done % step == 0 or done == total:
@@ -41,6 +48,8 @@ async def run_all(label: str, kind: str, keys: list[str],
                              label, done, total, failed, rate)
 
     await asyncio.gather(*(one(k) for k in keys))
+    if failed:
+        log.error("%s: stopped after a failure; %d not started", label, skipped)
     return failed
 
 
@@ -58,9 +67,11 @@ async def poll_until(label: str, kind: str, keys: list[str],
             if await check(key):
                 finished.append(key)
 
-        await run_all(f"{label} poll", kind, pending, probe, store, concurrency)
+        failed = await run_all(f"{label} poll", kind, pending, probe, store, concurrency)
         done_set = set(finished)
         pending = [k for k in pending if k not in done_set]
+        if failed:  # a status read failed: stop polling
+            return pending
         log.info("%s: %d still waiting", label, len(pending))
         if pending:
             await asyncio.sleep(interval_s)

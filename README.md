@@ -54,7 +54,7 @@ pytest          # optional: runs against a fake Sunbird, no network
 | Check progress and errors | `seeder verify` |
 | Write JMeter CSVs | `seeder export --workers 4` |
 
-Run the seed steps in order, or all at once with `seeder seed all`. If a step reports failures, run it again.
+Run the seed steps in order, or all at once with `seeder seed all`. A run stops at the first failed request (after retries); `seeder verify` shows the error. Fix it and rerun the same command to resume.
 
 Users are named `user1_<run_id>`, `user2_<run_id>`, ... with display name `User 1`, `User 2`, ...
 

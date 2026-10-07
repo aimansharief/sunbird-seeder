@@ -7,6 +7,7 @@ import httpx
 import pytest
 import yaml
 
+from seeder.cli import ORDER, seed_stages
 from seeder.client.http import SunbirdClient
 from seeder.config import Settings
 from seeder.export.csv_export import export_all
@@ -23,9 +24,14 @@ class FakeSunbird:
         self.enrolled = set()
         self.flaky_once = True
         self.root_org = None
+        self.fail_paths: set[str] = set()   # path prefixes that always return 400
+        self.paths: list[str] = []
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
         p = req.url.path
+        self.paths.append(p)
+        if any(p.startswith(f) for f in self.fail_paths):
+            return httpx.Response(400, text="rejected by test")
         ok = lambda result: httpx.Response(200, json={"result": result})
         if p.endswith("/openid-connect/token"):
             user = dict(httpx.QueryParams(req.content.decode()))["username"]
@@ -94,9 +100,10 @@ def no_sleep(monkeypatch):
         return None
     monkeypatch.setattr("seeder.client.http.asyncio.sleep", instant)
     monkeypatch.setattr("seeder.stages.runner.asyncio.sleep", instant)
+    monkeypatch.setattr("seeder.client.auth.asyncio.sleep", instant)
 
 
-async def test_full_pipeline(tmp_path, monkeypatch):
+def make_ctx(tmp_path, monkeypatch, fake):
     monkeypatch.chdir(tmp_path.parent)  # assets path is relative to repo root
     import os, shutil
     os.makedirs("assets", exist_ok=True)
@@ -118,11 +125,16 @@ async def test_full_pipeline(tmp_path, monkeypatch):
                "CONTENT_REVIEWER_USERNAME": "reviewer_login", "CONTENT_REVIEWER_PASSWORD": "r",
                "TEST_USER_PASSWORD": "pw"}
     settings = Settings(env=env, volumes=vol, secrets=secrets)
-    fake = FakeSunbird()
     fake.root_org = env["root_org_id"]
     store = Store(settings.output_dir / "state.db")
     client = SunbirdClient(settings, transport=httpx.MockTransport(fake))
-    ctx = Ctx(settings, store, client)
+    return Ctx(settings, store, client)
+
+
+async def test_full_pipeline(tmp_path, monkeypatch):
+    fake = FakeSunbird()
+    ctx = make_ctx(tmp_path, monkeypatch, fake)
+    settings, store, client, vol = ctx.settings, ctx.store, ctx.client, ctx.settings.volumes
 
     for stage in (users, content, courses, batches, enrolments):
         assert await stage.seed(ctx) == 0
@@ -155,3 +167,21 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     assert {r["courseId"]: r["contentIds"] for r in course_rows} == \
         {c["remote_id"]: ",".join(c["data"]["content_ids"]) for c in store.list("course", "live")}
     await client.close()
+
+
+async def test_seed_all_stops_at_first_failing_stage(tmp_path, monkeypatch):
+    fake = FakeSunbird()
+    fake.fail_paths = {"/api/course/v1/batch/create"}
+    ctx = make_ctx(tmp_path, monkeypatch, fake)
+    assert await seed_stages(ctx, ORDER) > 0
+    assert not fake.enrolled and not ctx.store.list("enrolment")    # enrolments never ran
+    await ctx.client.close()
+
+
+async def test_content_stage_stops_before_publish_polling(tmp_path, monkeypatch):
+    fake = FakeSunbird()
+    fake.fail_paths = {"/api/content/v1/upload/"}
+    ctx = make_ctx(tmp_path, monkeypatch, fake)
+    assert await content.seed(ctx) > 0
+    assert not any("/read/" in p or "/publish/" in p for p in fake.paths)
+    await ctx.client.close()

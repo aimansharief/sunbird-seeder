@@ -52,10 +52,10 @@ async def seed(ctx: Ctx) -> int:
             store.upsert(KIND, key, "publish_requested")
 
     failed = await run_all("content", KIND, todo, advance, store, ctx.env["concurrency"])
+    if failed:
+        return failed
 
     waiting = [r["key"] for r in store.list(KIND, "publish_requested")]
-
-    publish_failed: list[str] = []
 
     async def is_live(key: str) -> bool:
         rec = store.get(KIND, key)
@@ -63,13 +63,11 @@ async def seed(ctx: Ctx) -> int:
         if state == "Live":
             store.upsert(KIND, key, "live")
             return True
-        if state == "Failed":  # the publish job gave up: stop waiting, keep the error
-            store.mark_error(KIND, key, "publish failed on the server (status Failed)")
-            publish_failed.append(key)
-            return True
+        if state == "Failed":  # the publish job gave up; recorded as this item's error
+            raise RuntimeError("publish failed on the server (status Failed)")
         return False
 
     poll = ctx.env["publish_poll"]
     stuck = await poll_until("content publish", KIND, waiting, is_live, store,
                              ctx.env["concurrency"], poll["interval_s"], poll["timeout_s"])
-    return failed + len(stuck) + len(publish_failed)
+    return len(stuck)
