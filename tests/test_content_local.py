@@ -20,6 +20,8 @@ class FakeKnowlg:
         self.n = 0
         self.status, self.mime, self.requests = {}, {}, []
         self.publish_failures = 1          # first publish fails, retry must recover
+        self.version_key_failures = 1      # first upload lands but answers 400, like a timed-out retry
+        self.artifact = {}
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
         p = req.url.path
@@ -35,6 +37,10 @@ class FakeKnowlg:
             return ok({"identifier": ident})
         if p.startswith("/content/v4/upload/"):
             assert b"filename=" in req.content
+            self.artifact[p.rsplit("/", 1)[1]] = "https://cdn/x"
+            if self.version_key_failures:
+                self.version_key_failures -= 1
+                return httpx.Response(400, json={"params": {"errmsg": "Invalid version Key"}})
             return ok({"content_url": "https://cdn/x"})
         if p.startswith("/content/v4/publish/"):
             if self.publish_failures:
@@ -44,7 +50,9 @@ class FakeKnowlg:
             self.status[p.rsplit("/", 1)[1]] = "Live"
             return ok({"publishStatus": "pushed"})
         if p.startswith("/content/v4/read/"):
-            return ok({"content": {"status": self.status[p.rsplit("/", 1)[1]]}})
+            ident = p.rsplit("/", 1)[1]
+            return ok({"content": {"status": self.status[ident],
+                                   "artifactUrl": self.artifact.get(ident, "")}})
         return httpx.Response(404, text=p)
 
 
@@ -70,6 +78,7 @@ async def test_content_local_v4(tmp_path, monkeypatch):
 
     assert await content.seed(ctx) == 0
     assert [r["status"] for r in store.list("content")] == ["live"] * 12
+    assert fake.version_key_failures == 0   # the rejected upload was recovered, not retried
     assert set(fake.mime.values()) == {"application/pdf", "video/mp4"}
     # local calls go straight to the service: no API key, no user token, no review call
     assert all("authorization" not in h and "x-authenticated-user-token" not in h

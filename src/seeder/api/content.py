@@ -32,3 +32,8 @@ async def publish(c: SunbirdClient, content_id: str) -> None:
 async def status(c: SunbirdClient, content_id: str) -> str:
     res = await c.call("content_read", id=content_id, params={"fields": "status"})
     return res["result"]["content"]["status"]
+
+
+async def artifact_url(c: SunbirdClient, content_id: str) -> str:
+    res = await c.call("content_read", id=content_id, params={"fields": "artifactUrl"})
+    return res["result"]["content"].get("artifactUrl", "")

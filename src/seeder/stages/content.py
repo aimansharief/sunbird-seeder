@@ -23,6 +23,19 @@ async def publish_with_retry(c, cid: str, delay: float) -> None:
             await asyncio.sleep(delay)
 
 
+async def upload_or_recover(c, cid: str, mime_type: str) -> str:
+    """A slow upload can time out on our side but still succeed on the server. The retry is then
+    rejected with "Invalid version Key", so check whether the file is already attached."""
+    try:
+        return await api.upload(c, cid, mime_type)
+    except ApiError as exc:
+        if exc.status == 400 and "version key" in exc.body.lower():
+            url = await api.artifact_url(c, cid)
+            if url:
+                return url
+        raise
+
+
 async def seed(ctx: Ctx) -> int:
     store, c = ctx.store, ctx.client
     keys = [plan.content_key(ctx.run_id, i) for i in range(1, ctx.vol["contents"] + 1)]
@@ -42,7 +55,7 @@ async def seed(ctx: Ctx) -> int:
             await asyncio.sleep(delay)
         cid = store.get(KIND, key)["remote_id"]
         if status == "created":
-            url = await api.upload(c, cid, mime[key])
+            url = await upload_or_recover(c, cid, mime[key])
             store.upsert(KIND, key, "uploaded", data={"artifact_url": url})
             status = "uploaded"
             # videos are processed asynchronously: wait longer before publishing
