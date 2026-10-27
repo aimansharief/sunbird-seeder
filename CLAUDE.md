@@ -9,7 +9,7 @@ Seed-data generator for the Sunbird Spark API benchmark. It creates users, Live 
 | Goal | Generate seed data (users, Live content, Live courses, batches, enrolments) and the CSVs used to benchmark 7 read/write APIs with JMeter |
 | APIs under test | Content Read, Course Hierarchy, Content Search, User Profile Read, Read Content State, Update Content State, Telemetry |
 | Run matrix | Internal route vs via Kong × self-hosted YugabyteDB vs managed YugabyteDB (Runs A–D) |
-| Load tool | Distributed JMeter; each worker gets its own `_workerN` CSV |
+| Load tool | Distributed JMeter; with `--workers 1` CSVs are plain `users.csv`/`enrolments.csv`, otherwise each worker gets its own `_workerN` CSV |
 | This repo's job | Produce the data and CSVs only. Load testing lives elsewhere |
 
 Seed once through the APIs, then copy YugabyteDB to the managed instance with backup/restore. Re-seeding through the APIs produces different IDs and breaks the CSVs.
@@ -25,6 +25,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | Check progress and errors | `seeder verify` |
 | Write JMeter CSVs | `seeder export --workers N` |
 | Retire seeded content/courses | `seeder cleanup --yes` |
+| Run in the cluster | `helm -n <ns> install seed deploy/helm/seeder --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml` |
 
 ## Architecture
 
@@ -40,6 +41,9 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `src/seeder/stages/runner.py` | `run_all` (bounded concurrency; records the error and stops at the first failure) and `poll_until` (async publish) |
 | `src/seeder/state/store.py` | SQLite `entities` table keyed by `(kind, key)` |
 | `src/seeder/plan.py` | Pure functions: names, content→course and user→batch assignment, worker split |
+| `Dockerfile`, `.github/workflows/image.yml` | Image built and pushed to `ghcr.io/<owner>/sunbird-seeder` on every push to `main` |
+| `deploy/helm/seeder/` | Job (`seed all` → `verify` → `export`) + kept PVC at `/app/output` + optional `reader` pod to `kubectl cp` the run folder out |
+| `config/bench.cluster.yaml` | `bench.yaml` copy with in-cluster hosts (`lern-service.sunbird`, `knowlg-service.sunbird`); keep in sync with `bench.yaml` |
 | `src/seeder/export/` | CSV export: every Live ID and enrolment once; JMeter decides how to pick rows |
 
 Dependency order: users and content are independent; content (Live) → course (Live) → batch → enrolment.
