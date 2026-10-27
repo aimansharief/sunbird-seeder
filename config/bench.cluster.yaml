@@ -19,7 +19,7 @@ extra_headers:
   X-Channel-Id: 0146742505282273280
 
 concurrency: 10               # parallel requests while seeding
-request_timeout_s: 30
+request_timeout_s: 120
 retries: 4
 step_delay_s: 1               # pause between create/upload/publish
 
