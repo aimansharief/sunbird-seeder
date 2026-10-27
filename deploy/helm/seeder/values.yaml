@@ -9,7 +9,7 @@ imagePullSecrets: []          # ghcr packages are private by default: add a pull
 existingSecret: seeder-env
 
 # Pass the repo configs at install time (not stored in the chart):
-#   --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml
+#   --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.cluster.yaml
 benchYaml: ""
 volumesYaml: ""
 
@@ -23,8 +23,8 @@ pvc:
 backoffLimit: 6               # restarts after a crash or failed stage; seeder resumes from SQLite
 
 resources:
-  requests: {cpu: 500m, memory: 512Mi}
-  limits: {cpu: "2", memory: 2Gi}
+  requests: {cpu: 500m, memory: 2Gi}
+  limits: {cpu: "2", memory: 4Gi}
 
 # Throwaway pod that mounts the PVC so you can `kubectl cp` after the Job has exited.
 # Turn on with `helm upgrade --reuse-values --set reader.enabled=true`, off again the same way.

@@ -25,7 +25,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | Check progress and errors | `seeder verify` |
 | Write JMeter CSVs | `seeder export --workers N` |
 | Retire seeded content/courses | `seeder cleanup --yes` |
-| Run in the cluster | `helm -n <ns> install seed deploy/helm/seeder --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml` |
+| Run in the cluster | `helm -n <ns> install seed deploy/helm/seeder --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.cluster.yaml` |
 
 ## Architecture
 
@@ -43,6 +43,7 @@ Seed once through the APIs, then copy YugabyteDB to the managed instance with ba
 | `src/seeder/plan.py` | Pure functions: names, content→course and user→batch assignment, worker split |
 | `Dockerfile`, `.github/workflows/image.yml` | Image built and pushed to `ghcr.io/<owner>/sunbird-seeder` on every push to `main` |
 | `deploy/helm/seeder/` | Job (`seed all` → `verify` → `export`) + kept PVC at `/app/output` + optional `reader` pod to `kubectl cp` the run folder out |
+| `config/volumes.cluster.yaml` | Volumes for the in-cluster Job, passed with `--set-file volumesYaml=`; the ConfigMap it ends up in hides the image's `config/` |
 | `config/bench.cluster.yaml` | `bench.yaml` copy with in-cluster hosts (`lern-service.sunbird`, `knowlg-service.sunbird`); keep in sync with `bench.yaml` |
 | `src/seeder/export/` | CSV export: every Live ID and enrolment once; JMeter decides how to pick rows |
 

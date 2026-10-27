@@ -85,7 +85,7 @@ CI (`.github/workflows/image.yml`) pushes `ghcr.io/<owner>/sunbird-seeder` on ev
 export KUBECONFIG=...
 kubectl -n sunbird create secret generic seeder-env --from-env-file=.env
 helm -n sunbird install seed deploy/helm/seeder \
-  --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml
+  --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.cluster.yaml
 kubectl -n sunbird logs -f job/seed
 ```
 
