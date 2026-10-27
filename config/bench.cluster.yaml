@@ -1,0 +1,71 @@
+# In-cluster copy of bench.yaml for the Helm Job: local mode, services reached by cluster DNS.
+mode: local                  # public = via Kong (endpoints); local = internal services (local)
+base_url: https://dev.sunbirded.org
+output_root: output
+
+channel: sunbird
+root_org_id: 0146742505282273280
+framework: NCF
+email_domain: bench.example.com
+
+# Login = Keycloak grant -> refresh_token -> endpoints.refresh_token -> access token.
+keycloak:
+  url: https://dev.sunbirded.org/auth
+  realm: sunbird
+  client_id: direct-grant  # VERIFY: Keycloak client for all logins (KEYCLOAK_CLIENT_SECRET belongs to it)
+
+# Headers sent on every request.
+extra_headers:
+  X-Channel-Id: 0146742505282273280
+
+concurrency: 10               # parallel requests while seeding
+request_timeout_s: 30
+retries: 4
+step_delay_s: 1               # pause between create/upload/publish
+
+publish_poll:
+  interval_s: 10
+  timeout_s: 1800
+
+# "METHOD /path". {id} is replaced at call time.
+# VERIFY every entry against your Spark deployment before the first run.
+endpoints:
+  refresh_token:      POST /auth/v1/refresh/token
+  user_create:        POST /api/user/v1/create
+  user_search:        POST /api/user/v1/search
+  content_create:     POST /api/content/v1/create
+  content_upload:     POST /api/content/v1/upload/{id}
+  content_publish:    POST /api/content/v1/publish/{id}
+  content_read:       GET  /api/content/v1/read/{id}
+  content_retire:     DELETE /api/content/v1/retire/{id}
+  course_create:      POST /api/collection/v1/create
+  course_hierarchy:   PATCH /api/collection/v1/hierarchy/update
+  course_publish:     POST /api/collection/v1/publish/{id}
+  course_read:        GET  /api/collection/v1/read/{id}
+  course_retire:      DELETE /api/collection/v1/retire/{id}
+  batch_create:       POST /api/course/v1/batch/create
+  enrol:              POST /api/course/v1/enrol
+
+# Used when mode: local. Calls go straight to each service, without Kong or the
+# API key. user_token: true sends the caller's x-authenticated-user-token.
+# Login (Keycloak + refresh_token) always uses the public routes above.
+# VERIFY hosts and paths against your Spark deployment.
+local:
+  hosts:
+    lern: http://lern-service.sunbird:9000
+    knowlg: http://knowlg-service.sunbird:9000
+  endpoints:
+    user_create:      {route: "POST {lern}/v1/user/create", user_token: true}
+    user_search:      {route: "POST {lern}/v1/user/search", user_token: true}
+    content_create:   {route: "POST {knowlg}/content/v4/create"}
+    content_upload:   {route: "POST {knowlg}/content/v4/upload/{id}"}
+    content_publish:  {route: "POST {knowlg}/content/v4/publish/{id}"}
+    content_read:     {route: "GET {knowlg}/content/v4/read/{id}"}
+    content_retire:   {route: "DELETE {knowlg}/content/v4/retire/{id}"}
+    course_create:    {route: "POST {knowlg}/content/v4/create"}
+    course_hierarchy: {route: "PATCH {knowlg}/collection/v4/hierarchy/update"}
+    course_publish:   {route: "POST {knowlg}/collection/v4/publish/{id}"}
+    course_read:      {route: "GET {knowlg}/collection/v4/read/{id}"}
+    course_retire:    {route: "DELETE {knowlg}/collection/v4/retire/{id}"}
+    batch_create:     {route: "POST {lern}/v1/course/batch/create", user_token: true}
+    enrol:            {route: "POST {lern}/v1/course/enroll", user_token: true}

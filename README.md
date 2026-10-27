@@ -76,3 +76,34 @@ The `_workerN` files carry `userName` and `password` instead of tokens, so JMete
 ## Cleanup
 
 `seeder cleanup --yes` retires the seeded content and courses. Users, batches and enrolments are not removed.
+
+## Run in the cluster (Helm Job)
+
+CI (`.github/workflows/image.yml`) pushes `ghcr.io/<owner>/sunbird-seeder` on every push to main. Then:
+
+```bash
+export KUBECONFIG=...
+kubectl -n sunbird create secret generic seeder-env --from-env-file=.env
+helm -n sunbird install seed deploy/helm/seeder \
+  --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml
+kubectl -n sunbird logs -f job/seed
+```
+
+The Job runs `seed all`, `verify`, `export --workers N`, then holds the pod for `holdAfterDoneSeconds` so you can copy the CSVs:
+
+```bash
+kubectl -n sunbird cp $(kubectl -n sunbird get pod -l job-name=seed -o name | cut -d/ -f2):/app/output/<run_id>/csv ./csv
+```
+
+State (`state.db`) and CSVs live on the `seed-output` PVC, which survives `helm uninstall`. A crash restarts the pod and the seeder resumes. Use a new release name and `run_id` for a fresh seed.
+
+### After the Job has exited
+
+The pod is gone but the `seed-output` PVC is kept, with `state.db`, `seeder.log` and `csv/`. Start a reader pod on demand (the Job pod no longer holds the RWO disk); it deletes itself after `reader.ttlSeconds` (1h):
+
+```bash
+helm -n <ns> upgrade seed deploy/helm/seeder --reuse-values --set reader.enabled=true
+kubectl -n <ns> wait --for=condition=Ready pod/seed-reader
+kubectl -n <ns> cp seed-reader:/out/<run_id> ./output/<run_id>   # state.db, seeder.log and csv/
+helm -n <ns> upgrade seed deploy/helm/seeder --reuse-values --set reader.enabled=false   # when done
+```

@@ -1,0 +1,22 @@
+{{- if .Values.reader.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-reader
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: {{ .Values.reader.ttlSeconds }}   # kills itself, frees the RWO disk
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  containers:
+    - name: reader
+      image: busybox:1.36
+      command: [sleep, "{{ .Values.reader.ttlSeconds }}"]
+      volumeMounts:
+        - {name: output, mountPath: /out}
+  volumes:
+    - name: output
+      persistentVolumeClaim:
+        claimName: {{ .Release.Name }}-output
+{{- end }}

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: seeder
+description: One-shot Job that seeds Sunbird Spark and exports the JMeter CSVs
+version: 0.1.0
+appVersion: "0.1.0"

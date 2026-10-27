@@ -1,0 +1,12 @@
+{{- if not (and .Values.benchYaml .Values.volumesYaml) }}
+{{- fail "pass --set-file benchYaml=... and --set-file volumesYaml=..." }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  bench.yaml: |
+{{ .Values.benchYaml | indent 4 }}
+  volumes.yaml: |
+{{ .Values.volumesYaml | indent 4 }}

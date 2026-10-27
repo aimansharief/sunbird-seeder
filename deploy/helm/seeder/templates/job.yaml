@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ .Values.benchYaml | cat .Values.volumesYaml | sha256sum }}
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: seeder
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [sh, -c]
+          args:
+            - >-
+              seeder seed all &&
+              seeder verify &&
+              seeder export --workers {{ .Values.workers }} &&
+              sleep {{ .Values.holdAfterDoneSeconds }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - {name: output, mountPath: /app/output}
+            - {name: config, mountPath: /app/config}
+      volumes:
+        - name: output
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-output
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-config

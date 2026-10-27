@@ -1,0 +1,33 @@
+image:
+  repository: ghcr.io/aimansharief/sunbird-seeder
+  tag: latest
+  pullPolicy: Always
+imagePullSecrets: []          # ghcr packages are private by default: add a pull secret or make the package public
+
+# Secret holding the .env keys (see .env.example). Create it yourself, it is never in the chart:
+#   kubectl -n sunbird create secret generic seeder-env --from-env-file=.env
+existingSecret: seeder-env
+
+# Pass the repo configs at install time (not stored in the chart):
+#   --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.yaml
+benchYaml: ""
+volumesYaml: ""
+
+workers: 1                    # JMeter workers: `seeder export --workers`
+holdAfterDoneSeconds: 3600    # keep the pod alive after export so `kubectl cp` works from it
+
+pvc:
+  size: 3Gi
+  storageClassName: ""        # empty = cluster default (Azure Disk, RWO)
+
+backoffLimit: 6               # restarts after a crash or failed stage; seeder resumes from SQLite
+
+resources:
+  requests: {cpu: 500m, memory: 512Mi}
+  limits: {cpu: "2", memory: 2Gi}
+
+# Throwaway pod that mounts the PVC so you can `kubectl cp` after the Job has exited.
+# Turn on with `helm upgrade --reuse-values --set reader.enabled=true`, off again the same way.
+reader:
+  enabled: false
+  ttlSeconds: 3600
