@@ -5,9 +5,6 @@ metadata:
 spec:
   backoffLimit: {{ .Values.backoffLimit }}
   template:
-    metadata:
-      annotations:
-        checksum/config: {{ .Values.benchYaml | cat .Values.volumesYaml | sha256sum }}
     spec:
       restartPolicy: OnFailure
       securityContext:
@@ -23,9 +20,10 @@ spec:
           command: [sh, -c]
           args:
             - >-
-              seeder seed all &&
-              seeder verify &&
-              seeder export --workers {{ .Values.workers }} &&
+              S="seeder --env {{ .Values.benchFile }} --volumes {{ .Values.volumesFile }}";
+              $S seed all &&
+              $S verify &&
+              $S export --workers {{ .Values.workers }} &&
               sleep {{ .Values.holdAfterDoneSeconds }}
           envFrom:
             - secretRef:
@@ -33,11 +31,7 @@ spec:
           resources: {{ toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - {name: output, mountPath: /app/output}
-            - {name: config, mountPath: /app/config}
       volumes:
         - name: output
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-output
-        - name: config
-          configMap:
-            name: {{ .Release.Name }}-config

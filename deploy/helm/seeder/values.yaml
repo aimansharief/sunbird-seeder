@@ -8,10 +8,10 @@ imagePullSecrets: []          # ghcr packages are private by default: add a pull
 #   kubectl -n sunbird create secret generic seeder-env --from-env-file=.env
 existingSecret: seeder-env
 
-# Pass the repo configs at install time (not stored in the chart):
-#   --set-file benchYaml=config/bench.cluster.yaml --set-file volumesYaml=config/volumes.cluster.yaml
-benchYaml: ""
-volumesYaml: ""
+# Config files baked into the image (paths relative to /app). To change them: edit, push, wait
+# for the new image, then install with --set image.tag=sha-<commit>.
+benchFile: config/bench.cluster.yaml
+volumesFile: config/volumes.cluster.yaml
 
 workers: 1                    # JMeter workers: `seeder export --workers`
 holdAfterDoneSeconds: 3600    # keep the pod alive after export so `kubectl cp` works from it
