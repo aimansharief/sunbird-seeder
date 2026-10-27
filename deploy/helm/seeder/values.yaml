@@ -20,7 +20,7 @@ pvc:
   size: 3Gi
   storageClassName: ""        # empty = cluster default (Azure Disk, RWO)
 
-backoffLimit: 6               # restarts after a crash or failed stage; seeder resumes from SQLite
+backoffLimit: 30              # restarts after a crash or failed stage; seeder resumes from SQLite
 
 resources:
   requests: {cpu: 500m, memory: 2Gi}
