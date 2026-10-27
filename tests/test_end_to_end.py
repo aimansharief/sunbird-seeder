@@ -147,6 +147,8 @@ async def test_full_pipeline(tmp_path, monkeypatch):
     assert next(fake.ids) == before + 1
 
     assert report(store, vol)
+    one = export_all(store, settings.output_dir / "one", workers=1, password="pw")
+    assert (one / "users.csv").exists() and (one / "enrolments.csv").exists()
     csv_dir = export_all(store, settings.output_dir, workers=2, password="pw")
     rows = list(csv.DictReader(open(csv_dir / "enrolments_worker1.csv"))) + \
            list(csv.DictReader(open(csv_dir / "enrolments_worker2.csv")))

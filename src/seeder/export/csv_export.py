@@ -53,9 +53,10 @@ def export_all(store: Store, out_dir: Path, workers: int,
             ",".join(course_contents.get(d["course_id"], [])), d["user_key"], password])
 
     for w in range(1, workers + 1):
-        _write(csv_dir / f"users_worker{w}.csv",
+        suffix = "" if workers == 1 else f"_worker{w}"  # one worker = plain users.csv / enrolments.csv
+        _write(csv_dir / f"users{suffix}.csv",
                ["userId", "userName", "password"], users_by_worker[w])
-        _write(csv_dir / f"enrolments_worker{w}.csv",
+        _write(csv_dir / f"enrolments{suffix}.csv",
                ["userId", "courseId", "batchId", "contentIds", "userName", "password"],
                enrol_by_worker[w])
     return csv_dir

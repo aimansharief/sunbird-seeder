@@ -69,7 +69,7 @@ Everything is written to `output/<run_id>/`: progress in `state.db`, CSVs in `cs
 | `users_workerN.csv` | User Profile Read |
 | `enrolments_workerN.csv` | Read / Update Content State |
 
-Copy each `_workerN` file to JMeter worker N.
+Copy each `_workerN` file to JMeter worker N. With `--workers 1` (the default) the files are plain `users.csv` and `enrolments.csv`.
 
 The `_workerN` files carry `userName` and `password` instead of tokens, so JMeter logs each user in at test time. The password is `TEST_USER_PASSWORD`; share these files only with the load-test team.
 
