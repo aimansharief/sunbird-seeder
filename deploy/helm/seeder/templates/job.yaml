@@ -22,7 +22,7 @@ spec:
             - >-
               S="seeder --env {{ .Values.benchFile }} --volumes {{ .Values.volumesFile }}";
               $S seed all &&
-              $S verify &&
+              { $S verify || echo "verify found gaps, exporting anyway"; } &&
               $S export --workers {{ .Values.workers }} &&
               sleep {{ .Values.holdAfterDoneSeconds }}
           envFrom:

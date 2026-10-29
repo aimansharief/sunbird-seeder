@@ -1,11 +1,21 @@
 # Volumes for the in-cluster Job (pairs with bench.cluster.yaml).
 # Change run_id for every fresh seed; all names and the output folder use it.
-run_id: spark02
+# run_id: spark03
 
-users: 100000
-contents: 10000
-mp4_ratio: 0.4              # share of contents that are videos; the rest are PDFs (deterministic per run_id)
-courses: 1050
+# users: 100000
+# contents: 10000
+# mp4_ratio: 0.4              # share of contents that are videos; the rest are PDFs (deterministic per run_id)
+# courses: 1050
+# contents_per_course: 5
+# units_per_course: 2
+# users_per_batch: 500        # one batch per course -> 1050 x 500 = 525,000 enrolments
+
+run_id: smoke01
+users: 10
+contents: 10
+mp4_ratio: 0.3
+courses: 5
 contents_per_course: 5
 units_per_course: 2
-users_per_batch: 500        # one batch per course -> 1050 x 500 = 525,000 enrolments
+users_per_batch: 5
+
